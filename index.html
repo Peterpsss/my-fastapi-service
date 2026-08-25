@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommendations</title>
+    <!-- Cinematic Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Movie Recommendations</h1>
+        <p>Stop endless scrolling and start watching. Find the perfect movie for your night in seconds.</p>
+    </header>
+
+    <main>
+        <!-- SEARCH & CONTROLS SECTION -->
+        <section class="search-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search title, genre, director, or year...">
+                <button class="primary-btn" onclick="searchMovies()">Search</button>
+            </div>
+            
+            <!-- CATEGORY CHIPS AND DYNAMIC SORTING DROPDOWN -->
+            <div class="controls-row">
+                <div class="category-chips">
+                    <button class="chip-btn active" onclick="filterCategory('All')">All</button>
+                    <button class="chip-btn" onclick="filterCategory('Thriller')">Thriller</button>
+                    <button class="chip-btn" onclick="filterCategory('Comedy')">Comedy</button>
+                    <button class="chip-btn" onclick="filterCategory('Romance')">Romance</button>
+                </div>
+
+                <div class="sort-container">
+                    <label for="sortSelect">Sort By:</label>
+                    <select id="sortSelect" onchange="sortAndDisplayMovies()">
+                        <option value="rating-desc">Highest Rated</option>
+                        <option value="rating-asc">Lowest Rated</option>
+                        <option value="year-desc">Newest Release</option>
+                        <option value="year-asc">Oldest Release</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- MOVIE GRID -->
+        <section>
+            <h2>Collection</h2>
+            <div id="movieList" class="movie-list">
+                <p class="loading-text">Loading movies...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- CUSTOM DARK MOVIE DETAILS MODAL -->
+    <div id="movieModal" class="modal-overlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal-content">
+            <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+            <div id="modalBody">
+                <!-- Movie details dynamically injected here -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Data provided by the Movie Finder API | Deployed on Vercel</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
