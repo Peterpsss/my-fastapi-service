@@ -461,3 +461,48 @@ footer {
     border-top: 1px solid #1f1f23;
     margin-top: 50px;
 }
+
+.search-banner {
+    background: #202024;
+    border-left: 4px solid #e50914;
+    padding: 12px 18px;
+    margin-bottom: 25px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: #a8a8b3;
+}
+
+.search-banner strong {
+    color: #ffffff;
+}
+
+.search-banner span {
+    color: #e50914;
+    font-weight: 600;
+}
+
+/* ID TAG STYLES */
+.movie-id-tag {
+    background: #e50914;
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.poster-container .movie-id-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.modal-tags {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}

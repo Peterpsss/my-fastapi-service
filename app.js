@@ -2,13 +2,23 @@ const API_URL = "https://my-fastapi-service-sigma.vercel.app";
 let allMoviesData = [];
 let currentFilteredMovies = [];
 
-// GET ALL MOVIES
+// List of top genres requested
+const GENRES_LIST = [
+    "All", "Action", "Drama", "Comedy", "Horror", 
+    "Science Fiction", "Romance", "Thriller", "Adventure", "Animation", "Fantasy"
+];
+
+// INITIALIZE APP
 async function loadMovies() {
     try {
+        renderGenreFilterButtons();
         const response = await fetch(`${API_URL}/movies`);
         const data = await response.json();
-        allMoviesData = data.movies;
+        
+        // Load all 14 movie properties into memory
+        allMoviesData = data.movies || [];
         currentFilteredMovies = [...allMoviesData];
+        
         sortAndDisplayMovies();
         updateCategoryButtons("All");
     } catch (error) {
@@ -17,18 +27,97 @@ async function loadMovies() {
     }
 }
 
-// FILTER BY CATEGORY
+// RENDER GENRE FILTER BUTTONS DYNAMICALLY
+function renderGenreFilterButtons() {
+    const categoryContainer = document.querySelector(".category-filters") || document.getElementById("categoryFilters");
+    if (!categoryContainer) return;
+
+    categoryContainer.innerHTML = "";
+    GENRES_LIST.forEach(genre => {
+        const btn = document.createElement("button");
+        btn.className = `chip-btn ${genre === "All" ? "active" : ""}`;
+        btn.textContent = genre;
+        btn.addEventListener("click", () => filterCategory(genre));
+        categoryContainer.appendChild(btn);
+    });
+}
+
+// REAL-TIME SEARCH ACROSS ALL 14 MOVIE PROPERTIES
+function handleRealtimeSearch() {
+    const query = document.getElementById("searchInput").value.trim().toLowerCase();
+    
+    if (query !== "") {
+        updateCategoryButtons("");
+    } else {
+        updateCategoryButtons("All");
+    }
+
+    if (!query) {
+        currentFilteredMovies = [...allMoviesData];
+    } else {
+        currentFilteredMovies = allMoviesData.filter(movie => {
+            // Checks all 14 properties (title, year, rating, genre, director, writer, producer, studio, country, budget, runtime, cast, description, category, id)
+            return Object.values(movie).some(val => {
+                if (val === null || val === undefined) return false;
+                return String(val).toLowerCase().includes(query);
+            });
+        });
+    }
+
+    updateSearchBanner(query, currentFilteredMovies.length);
+    sortAndDisplayMovies();
+}
+
+// UPDATE DYNAMIC RESULTS BANNER ABOVE COLLECTION
+function updateSearchBanner(query, count) {
+    let banner = document.getElementById("searchBanner");
+    
+    if (!banner) {
+        banner = document.createElement("div");
+        banner.id = "searchBanner";
+        banner.className = "search-banner";
+        const collectionHeading = document.querySelector("main section:nth-of-type(2) h2");
+        if (collectionHeading) {
+            collectionHeading.insertAdjacentElement("afterend", banner);
+        }
+    }
+
+    if (!query) {
+        banner.style.display = "none";
+        banner.innerHTML = "";
+    } else {
+        banner.style.display = "block";
+        banner.innerHTML = `Showing <strong>${count}</strong> ${count === 1 ? 'result' : 'results'} matching "<span>${escapeHTML(query)}</span>"`;
+    }
+}
+
+// HELPER TO PREVENT XSS
+function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    );
+}
+
+// FILTER BY GENRE (Supports multi-genre strings like "Action / Crime / Thriller")
 function filterCategory(categoryName) {
     document.getElementById("searchInput").value = "";
+    updateSearchBanner("", 0);
     updateCategoryButtons(categoryName);
 
     if (categoryName === "All") {
         currentFilteredMovies = [...allMoviesData];
     } else {
-        currentFilteredMovies = allMoviesData.filter(movie => 
-            movie.category.toLowerCase() === categoryName.toLowerCase() ||
-            movie.genre.toLowerCase().includes(categoryName.toLowerCase())
-        );
+        const target = categoryName.toLowerCase();
+        currentFilteredMovies = allMoviesData.filter(movie => {
+            const genreMatch = movie.genre && movie.genre.toLowerCase().includes(target);
+            const categoryMatch = movie.category && movie.category.toLowerCase().includes(target);
+            // Handles "Science Fiction" search against "Sci-Fi" aliases
+            const sciFiAliasMatch = (target === "science fiction" || target === "sci-fi") && 
+                ((movie.genre && movie.genre.toLowerCase().includes("sci-fi")) || 
+                 (movie.category && movie.category.toLowerCase().includes("sci-fi")));
+
+            return genreMatch || categoryMatch || sciFiAliasMatch;
+        });
     }
     sortAndDisplayMovies();
 }
@@ -46,7 +135,7 @@ function sortAndDisplayMovies() {
     displayMovies(sorted);
 }
 
-// UPDATE ACTIVE BUTTONS
+// UPDATE ACTIVE BUTTON STATES
 function updateCategoryButtons(activeCategory) {
     const buttons = document.querySelectorAll(".chip-btn");
     buttons.forEach(btn => {
@@ -54,7 +143,14 @@ function updateCategoryButtons(activeCategory) {
     });
 }
 
-// DISPLAY MOVIES
+// HELPER: FILTER OUT BLANK / "N/A" / NULL VALUES
+function isValidValue(val) {
+    if (val === null || val === undefined) return false;
+    const str = String(val).trim();
+    return str !== "" && str.toUpperCase() !== "N/A";
+}
+
+// DISPLAY MOVIES (ENGAGING CARDS)
 function displayMovies(movies) {
     const movieList = document.getElementById("movieList");
     movieList.innerHTML = "";
@@ -69,20 +165,33 @@ function displayMovies(movies) {
         card.className = "movie-card";
         card.tabIndex = 0;
         
+        const categoryClass = (movie.category || 'default').toLowerCase().replace(/\s+/g, '-');
+
+        // Build engaging metadata front view
+        let metaDetailsHTML = "";
+        if (isValidValue(movie.genre)) {
+            metaDetailsHTML += `<p class="movie-genre"><strong>Genre:</strong> ${movie.genre}</p>`;
+        }
+        if (isValidValue(movie.director)) {
+            metaDetailsHTML += `<p><strong>Director:</strong> ${movie.director}</p>`;
+        }
+        if (isValidValue(movie.cast)) {
+            metaDetailsHTML += `<p><strong>Starring:</strong> ${movie.cast}</p>`;
+        }
+
         card.innerHTML = `
             <div class="poster-container">
                 <img src="${movie.poster}" alt="${movie.title}" class="movie-poster" loading="lazy">
-                <span class="movie-category-tag ${movie.category.toLowerCase().replace(/\s+/g, '-')}">${movie.category}</span>
+                <span class="movie-category-tag ${categoryClass}">${movie.category || 'Movie'}</span>
             </div>
             <div class="card-body">
                 <div class="card-header">
-                    <span class="movie-year">${movie.release_year}</span>
-                    <span class="movie-rating">★ ${movie.rating}</span>
+                    <span class="movie-year">${movie.release_year || ''}</span>
+                    <span class="movie-rating">${isValidValue(movie.rating) ? '★ ' + movie.rating : ''}</span>
                 </div>
                 <h3>${movie.title}</h3>
-                <p class="movie-genre"><strong>Genre:</strong> ${movie.genre}</p>
-                <p><strong>Director:</strong> ${movie.director}</p>
-                <p class="movie-desc">${movie.description}</p>
+                ${metaDetailsHTML}
+                ${isValidValue(movie.description) ? `<p class="movie-desc">${movie.description}</p>` : ''}
             </div>
         `;
 
@@ -107,11 +216,38 @@ function selectCard(selectedCard) {
     selectedCard.classList.add("selected-card");
 }
 
-// OPEN MODAL WITHOUT ID IN TITLE & WITH FALLBACK FOR UNDEFINED FIELDS
+// OPEN DETAILED MODAL (DISPLAYING ALL 14 MOVIE FEATURES)
 async function viewMovie(id) {
     try {
         const response = await fetch(`${API_URL}/movies/${id}`);
         const movie = await response.json();
+
+        const categoryClass = (movie.category || 'default').toLowerCase().replace(/\s+/g, '-');
+        
+        // Explicitly map all 14 movie features (omitting ID from header badge display)
+        const detailsList = [
+            { label: 'Genre', value: movie.genre },
+            { label: 'Director', value: movie.director },
+            { label: 'Starring Cast', value: movie.cast, fullWidth: true },
+            { label: 'Writer', value: movie.writer },
+            { label: 'Producer', value: movie.producer },
+            { label: 'Studio', value: movie.studio },
+            { label: 'Country', value: movie.country },
+            { label: 'Budget', value: movie.budget },
+            { label: 'Rating', value: isValidValue(movie.rating) ? `${movie.rating} / 10` : null }
+        ];
+
+        let gridItemsHTML = detailsList
+            .filter(item => isValidValue(item.value))
+            .map(item => `
+                <div ${item.fullWidth ? 'class="full-width"' : ''}>
+                    <strong>${item.label}:</strong>
+                    <p>${item.value}</p>
+                </div>
+            `).join('');
+
+        // Build meta header (Year, Runtime, Language)
+        const metaList = [movie.release_year, movie.runtime, movie.language].filter(isValidValue);
 
         const modalBody = document.getElementById("modalBody");
         modalBody.innerHTML = `
@@ -119,32 +255,22 @@ async function viewMovie(id) {
                 <img src="${movie.poster}" alt="${movie.title}" class="modal-poster">
                 <div class="modal-details">
                     <div class="modal-header">
-                        <span class="movie-category-tag ${movie.category.toLowerCase().replace(/\s+/g, '-')}">${movie.category}</span>
-                        <span class="modal-rating">★ ${movie.rating} / 10</span>
+                        <div class="modal-tags">
+                            <span class="movie-category-tag ${categoryClass}">${movie.category || 'Movie'}</span>
+                        </div>
+                        ${isValidValue(movie.rating) ? `<span class="modal-rating">★ ${movie.rating} / 10</span>` : ''}
                     </div>
                     <h2 class="modal-title">${movie.title}</h2>
-                    <p class="modal-meta">
-                        <span>${movie.release_year}</span> &bull; 
-                        <span>${movie.runtime || 'N/A'}</span> &bull; 
-                        <span>${movie.language || 'N/A'}</span>
-                    </p>
+                    ${metaList.length > 0 ? `<p class="modal-meta">${metaList.join(' &bull; ')}</p>` : ''}
 
-                    <div class="modal-section">
-                        <h4>Synopsis</h4>
-                        <p class="modal-description">${movie.description}</p>
-                    </div>
+                    ${isValidValue(movie.description) ? `
+                        <div class="modal-section">
+                            <h4>Synopsis</h4>
+                            <p class="modal-description">${movie.description}</p>
+                        </div>
+                    ` : ''}
 
-                    <div class="modal-details-grid">
-                        <div><strong>Genre:</strong><p>${movie.genre || 'N/A'}</p></div>
-                        <div><strong>Director:</strong><p>${movie.director || 'N/A'}</p></div>
-                        <div><strong>Writer:</strong><p>${movie.writer || 'N/A'}</p></div>
-                        <div><strong>Producer:</strong><p>${movie.producer || 'N/A'}</p></div>
-                        <div><strong>Studio:</strong><p>${movie.studio || 'N/A'}</p></div>
-                        <div><strong>Country:</strong><p>${movie.country || 'N/A'}</p></div>
-                        <div><strong>Budget:</strong><p>${movie.budget || 'N/A'}</p></div>
-                        <div><strong>Rating:</strong><p>${movie.rating} / 10</p></div>
-                        <div class="full-width"><strong>Starring Cast:</strong><p>${movie.cast || 'N/A'}</p></div>
-                    </div>
+                    ${gridItemsHTML ? `<div class="modal-details-grid">${gridItemsHTML}</div>` : ''}
                 </div>
             </div>
         `;
@@ -168,27 +294,7 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeModal();
 });
 
-// SEARCH BAR LISTENER
-async function searchMovies() {
-    const query = document.getElementById("searchInput").value.trim();
-    if (!query) {
-        loadMovies();
-        return;
-    }
-    try {
-        const response = await fetch(`${API_URL}/movies/search?q=${encodeURIComponent(query)}`);
-        const data = await response.json();
-        currentFilteredMovies = data.results;
-        sortAndDisplayMovies();
-        updateCategoryButtons("");
-    } catch (error) {
-        console.error(error);
-        alert("Search query failed.");
-    }
-}
-
-document.getElementById("searchInput")?.addEventListener("keyup", (event) => {
-    if (event.key === "Enter") searchMovies();
-});
+// REAL-TIME SEARCH EVENT LISTENER
+document.getElementById("searchInput")?.addEventListener("input", handleRealtimeSearch);
 
 loadMovies();
