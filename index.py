@@ -1,7 +1,9 @@
+import os
 from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 
 app = FastAPI(
@@ -142,13 +144,13 @@ for index, spec in enumerate(additional_creator_specs, start=11):
     creators.append(creator(index, name, handle, niche, country, subscribers, raw_subs, total_views, raw_views, video_count, joined_year, f"Official videos, stories, and updates from {name}."))
 
 
-@app.get("/")
-def home() -> Dict[str, Any]:
-    return {
-        "message": "Welcome to the YouTuber Archive API!",
-        "count": len(creators),
-        "endpoints": ["/youtubers", "/youtubers/{id}", "/youtubers/search"],
-    }
+@app.get("/", response_class=HTMLResponse)
+def home():
+    file_path = os.path.join(os.path.dirname(__file__), "../index.html")
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h1>Welcome to the YouTuber Archive API</h1><p>index.html not found.</p>"
 
 
 @app.get("/creators")
