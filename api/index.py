@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 
 
 app = FastAPI(
@@ -151,6 +151,25 @@ def home():
         with open(file_path, "r", encoding="utf-8") as f:
             return f.read()
     return "<h1>Welcome to the YouTuber Archive API</h1><p>index.html not found.</p>"
+
+
+# --- STATIC FILES: index.html only asks the browser to load these by name,
+# so the API needs its own routes for them, or they silently 404 and the
+# page renders unstyled with no interactivity (no CSS, no app.js running).
+@app.get("/style.css")
+def get_stylesheet():
+    file_path = os.path.join(os.path.dirname(__file__), "../style.css")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="style.css not found.")
+    return FileResponse(file_path, media_type="text/css")
+
+
+@app.get("/app.js")
+def get_script():
+    file_path = os.path.join(os.path.dirname(__file__), "../app.js")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="app.js not found.")
+    return FileResponse(file_path, media_type="application/javascript")
 
 
 @app.get("/creators")
