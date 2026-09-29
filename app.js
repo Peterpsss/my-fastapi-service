@@ -870,7 +870,7 @@ const YOUTUBERS_DATA = [
         popularVideo: {
             title: "Fortnite World Record Squad Win",
             views: "20M+ views",
-            thumb: "https://unavatar.io/youtube/ninja?fallback=https://ui-avatars.com/api/?background=272727&color=fff&size=480&name=ninja"
+            thumb: "https://img.youtube.com/vi/2N7uX72o-iM/hqdefault.jpg"
         }
     },
     {
@@ -914,7 +914,7 @@ const YOUTUBERS_DATA = [
         popularVideo: {
             title: "KSI vs Logan Paul 2 - Post Fight Reaction",
             views: "25M+ views",
-            thumb: "https://unavatar.io/youtube/ksi?fallback=https://ui-avatars.com/api/?background=272727&color=fff&size=480&name=ksi"
+            thumb: "https://img.youtube.com/vi/3j_s6H0_G6M/hqdefault.jpg"
         }
     },
     {
@@ -1002,7 +1002,7 @@ const YOUTUBERS_DATA = [
         popularVideo: {
             title: "Unboxing Every iPhone Ever",
             views: "10M+ views",
-            thumb: "https://unavatar.io/youtube/ijustine?fallback=https://ui-avatars.com/api/?background=272727&color=fff&size=480&name=ijustine"
+            thumb: "https://img.youtube.com/vi/b3p_SjR1-2w/hqdefault.jpg"
         }
     },
     {
@@ -1023,7 +1023,7 @@ const YOUTUBERS_DATA = [
         popularVideo: {
             title: "The Best Laptop You Can Buy",
             views: "8M+ views",
-            thumb: "https://unavatar.io/youtube/dave2d?fallback=https://ui-avatars.com/api/?background=272727&color=fff&size=480&name=dave2d"
+            thumb: "https://img.youtube.com/vi/9xG33o6CgS0/hqdefault.jpg"
         }
     },
 
@@ -1046,7 +1046,7 @@ const YOUTUBERS_DATA = [
         popularVideo: {
             title: "Asking Strangers to Skydive With Us",
             views: "20M+ views",
-            thumb: "https://unavatar.io/youtube/yestheory?fallback=https://ui-avatars.com/api/?background=272727&color=fff&size=480&name=yestheory"
+            thumb: "https://img.youtube.com/vi/vS3_0L7M-A4/hqdefault.jpg"
         }
     },
     {
@@ -1082,13 +1082,9 @@ const NICHES_LIST = [
     "Music"
 ];
 
-// Approximate CPM range (USD per 1,000 views) — the same modeling approach public
-// trackers like vidIQ's Earnings Checker use ("estimated value based on a default
-// category CPM and total views"). Shown as an estimate range, not a verified figure.
 const CPM_LOW = 0.25;
 const CPM_HIGH = 4.0;
 
-// Sort options mapped to comparator + a human label used for the dynamic Rank stat.
 const SORT_CONFIG = {
     subs:       { label: "Subscribers",   compare: (a, b) => b.rawSubs - a.rawSubs },
     views:      { label: "Total Views",   compare: (a, b) => b.rawViews - a.rawViews },
@@ -1101,20 +1097,10 @@ let currentNiche = "All";
 let currentQuery = "";
 let currentSortBy = "subs";
 let searchDebounceHandle = null;
+let cardObserver = null;
 
 /* ------------------------------------------------------------------
-   DERIVED ANALYTICS ENGINE
-   Scoped strictly to what vidIQ's YouTube Stats tool (vidiq.com/youtube-stats)
-   actually advertises tracking per channel: a Views Counter, a
-   Subscriber Tracker, and an Earnings Checker ("estimated YouTube
-   earnings and revenue for any channel based on views and engagement").
-   There is no public "Channel Score," "Engagement Rate," "Upload
-   Frequency," or "Avg Video Length" metric on that page, so those
-   fabricated stats have been removed rather than presented as if
-   they came from vidIQ. Only Est. Earnings below is a derived
-   estimate; every other tile is a real, sourced field from the
-   creator's own data (subs, views, videos, joined year, niche,
-   country).
+   ANALYTICS HELPERS
 ------------------------------------------------------------------- */
 
 function getAvgViewsPerVideo(creator) {
@@ -1128,15 +1114,11 @@ function getChannelAgeMonths(creator) {
 }
 
 function getUploadsPerWeek(creator) {
-    // Used only internally to model monthly output for the earnings estimate below —
-    // not surfaced as its own "Upload Frequency" stat, since vidIQ doesn't publish one.
     const weeks = getChannelAgeMonths(creator) * 4.345;
     return creator.videoCount / weeks;
 }
 
 function getEstEarnings(creator) {
-    // Mirrors vidIQ's own Earnings Checker premise: an estimate based on views,
-    // using a CPM range, not an official or verified figure.
     const monthlyViews = getAvgViewsPerVideo(creator) * getUploadsPerWeek(creator) * 4.345;
     const low = Math.round((monthlyViews / 1000) * CPM_LOW);
     const high = Math.round((monthlyViews / 1000) * CPM_HIGH);
@@ -1171,9 +1153,6 @@ function buildStatBlocks(creator) {
     const rank = getSortRank(creator, currentSortBy);
     const sortLabel = (SORT_CONFIG[currentSortBy] || SORT_CONFIG.subs).label;
 
-    // 10 stat tiles: the two things vidIQ's tool actually tracks (Subscribers,
-    // Views — with Est. Earnings modeled the same way vidIQ models it), plus
-    // plain sourced channel facts. No fabricated "score" or engagement metrics.
     return [
         { label: "Subscribers", value: creator.subscribers, icon: "👥" },
         { label: "Total Views", value: creator.totalViews, icon: "▶️" },
@@ -1189,246 +1168,202 @@ function buildStatBlocks(creator) {
 }
 
 /* ------------------------------------------------------------------
-   INIT
+   UI RENDERING & INTERACTIVITY
 ------------------------------------------------------------------- */
 
-document.addEventListener("DOMContentLoaded", () => {
-    renderNicheFilterButtons();
-    handleRealtimeSearch();
-    setupScrollReveal();
-});
-
-function escapeHTML(str) {
-    return String(str).replace(/[&<>"']/g, match => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    }[match]));
-}
-
 function renderNicheFilterButtons() {
-    const container = document.getElementById("categoryContainer");
+    const container = document.querySelector(".category-chips");
     if (!container) return;
 
     container.innerHTML = NICHES_LIST.map(niche => `
-        <button class="chip-btn ${niche === currentNiche ? 'active' : ''}"
-                onclick="filterNiche('${niche}')">
+        <button class="chip-btn ${niche === currentNiche ? 'active' : ''}" data-niche="${niche}">
             ${niche}
         </button>
     `).join("");
-}
 
-function filterNiche(niche) {
-    currentNiche = niche;
-    renderNicheFilterButtons();
-    handleRealtimeSearch();
+    container.querySelectorAll(".chip-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            currentNiche = btn.dataset.niche;
+            renderNicheFilterButtons();
+            renderYoutubers();
+        });
+    });
 }
 
 function handleRealtimeSearch() {
-    // Debounce so fast typing doesn't thrash the DOM / re-trigger animations.
-    clearTimeout(searchDebounceHandle);
-    searchDebounceHandle = setTimeout(runSearch, 120);
-}
+    const searchInput = document.querySelector(".search-bar input");
+    const sortSelect = document.querySelector(".sort-container select");
 
-function runSearch() {
-    const searchInput = document.getElementById("searchInput");
-    const query = searchInput ? searchInput.value.toLowerCase().trim() : "";
-    currentQuery = query;
-
-    const sortSelect = document.getElementById("sortSelect");
-    currentSortBy = sortSelect ? sortSelect.value : "subs";
-
-    let filtered = YOUTUBERS_DATA.filter(creator => {
-        const matchesNiche = currentNiche === "All" || creator.niche === currentNiche;
-
-        const matchesSearch = query === "" ||
-                              creator.name.toLowerCase().includes(query) ||
-                              creator.handle.toLowerCase().includes(query) ||
-                              creator.country.toLowerCase().includes(query);
-
-        return matchesNiche && matchesSearch;
-    });
-
-    const config = SORT_CONFIG[currentSortBy] || SORT_CONFIG.subs;
-    filtered.sort(config.compare);
-
-    updateSearchBanner(query, filtered.length);
-    displayYoutubers(filtered);
-}
-
-function sortAndDisplayYoutubers() {
-    runSearch();
-}
-
-function updateSearchBanner(query, count) {
-    const banner = document.getElementById("searchBanner");
-    if (!banner) return;
-
-    if (query || currentNiche !== "All") {
-        banner.style.display = "block";
-        banner.classList.remove("pulse-once");
-        void banner.offsetWidth; // restart animation
-        banner.classList.add("pulse-once");
-        const filterLabel = query ? `"${escapeHTML(query)}"` : `Category: ${currentNiche}`;
-        banner.innerHTML = `Results for <strong>${filterLabel}</strong>: <span>${count} creators found</span>`;
-    } else {
-        banner.style.display = "none";
-    }
-}
-
-function displayYoutubers(creators) {
-    const list = document.getElementById("youtuberList");
-    if (!list) return;
-
-    if (creators.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">🔍</div>
-                <p>No creators found matching your criteria.</p>
-            </div>`;
-        return;
+    if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+            clearTimeout(searchDebounceHandle);
+            searchDebounceHandle = setTimeout(() => {
+                currentQuery = e.target.value.trim().toLowerCase();
+                renderYoutubers();
+            }, 200);
+        });
     }
 
-    list.innerHTML = creators.map((creator, index) => {
-        const rank = getSortRank(creator, currentSortBy);
-
-        return `
-        <div class="youtuber-card reveal"
-             style="animation-delay: ${Math.min(index * 0.045, 0.5)}s;"
-             tabindex="0"
-             onclick="viewCreator('${creator.id}')"
-             onkeydown="if(event.key==='Enter') viewCreator('${creator.id}')">
-            <div class="banner-container">
-                <img class="channel-banner" src="${creator.banner}" alt="Banner" loading="lazy">
-                <div class="rank-badge">#${rank}</div>
-                <div class="avatar-wrapper">
-                    <img class="creator-avatar" src="${creator.avatar}" alt="${escapeHTML(creator.name)}" loading="lazy">
-                </div>
-            </div>
-            <div class="card-body">
-                <h3>${escapeHTML(creator.name)} <span class="verified-badge" title="Verified">✔</span></h3>
-                <div class="handle">${escapeHTML(creator.handle)} &middot; ${escapeHTML(creator.country)}</div>
-                <div class="sub-count">${creator.subscribers} subscribers</div>
-                <div class="mini-stats-row">
-                    <span class="mini-stat">${creator.totalViews} views</span>
-                    <span class="mini-stat">${creator.videoCount.toLocaleString()} videos</span>
-                </div>
-                <span class="niche-badge">${creator.niche}</span>
-                <p class="bio">${escapeHTML(creator.bio)}</p>
-            </div>
-        </div>
-        `;
-    }).join("");
-
-    setupScrollReveal();
+    if (sortSelect) {
+        sortSelect.addEventListener("change", (e) => {
+            currentSortBy = e.target.value;
+            renderYoutubers();
+        });
+    }
 }
 
 function setupScrollReveal() {
-    const cards = document.querySelectorAll(".youtuber-card.reveal:not(.revealed)");
-    if (!("IntersectionObserver" in window)) {
-        cards.forEach(c => c.classList.add("revealed"));
-        return;
-    }
-    const observer = new IntersectionObserver((entries, obs) => {
+    if (cardObserver) cardObserver.disconnect();
+
+    cardObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add("revealed");
-                obs.unobserve(entry.target);
+                cardObserver.unobserve(entry.target);
             }
         });
-    }, { threshold: 0.08 });
-
-    cards.forEach(card => observer.observe(card));
+    }, { threshold: 0.1 });
 }
 
-/* ------------------------------------------------------------------
-   MODAL
-------------------------------------------------------------------- */
+function renderYoutubers() {
+    const grid = document.querySelector(".youtuber-list");
+    if (!grid) return;
 
-function viewCreator(id) {
-    const creator = YOUTUBERS_DATA.find(c => c.id === id);
-    if (!creator) return;
+    const sortConfig = SORT_CONFIG[currentSortBy] || SORT_CONFIG.subs;
+    const filtered = YOUTUBERS_DATA
+        .filter(creator => {
+            const matchesNiche = currentNiche === "All" || creator.niche === currentNiche;
+            const matchesQuery = !currentQuery || 
+                creator.name.toLowerCase().includes(currentQuery) || 
+                creator.handle.toLowerCase().includes(currentQuery) ||
+                creator.niche.toLowerCase().includes(currentQuery);
+            return matchesNiche && matchesQuery;
+        })
+        .sort(sortConfig.compare);
 
-    const modal = document.getElementById("creatorModal");
-    if (!modal) return;
-
-    document.getElementById("modalBanner").src = creator.banner;
-    document.getElementById("modalAvatar").src = creator.avatar;
-    document.getElementById("modalName").innerText = creator.name;
-    document.getElementById("modalHandle").innerText = `${creator.handle} · ${creator.country}`;
-    document.getElementById("modalBio").innerText = creator.bio;
-
-    // Real YouTube channel link, built from each creator's handle (e.g. "@mrbeast").
-    const channelUrl = `https://www.youtube.com/${creator.handle}`;
-    const channelLink = document.getElementById("modalChannelLink");
-    if (channelLink) channelLink.href = channelUrl;
-    const subscribeBtn = document.getElementById("modalSubscribeBtn");
-    if (subscribeBtn) subscribeBtn.href = channelUrl;
-
-    document.getElementById("modalUploadThumb").src = creator.popularVideo.thumb;
-    document.getElementById("modalUploadTitle").innerText = creator.popularVideo.title;
-    document.getElementById("modalUploadViews").innerText = creator.popularVideo.views;
-
-    const rank = getSortRank(creator, currentSortBy);
-    const sortLabel = (SORT_CONFIG[currentSortBy] || SORT_CONFIG.subs).label;
-    const rankBadge = document.getElementById("modalRankBadge");
-    if (rankBadge) {
-        rankBadge.innerText = `#${rank} of ${YOUTUBERS_DATA.length} · by ${sortLabel}`;
-    }
-
-    const stats = buildStatBlocks(creator);
-    const grid = document.getElementById("modalStatsGrid");
-    if (grid) {
-        grid.innerHTML = stats.map((s, i) => `
-            <div class="stat-item stat-anim" style="animation-delay:${i * 0.035}s">
-                <span>${s.icon} ${s.label}</span>
-                <strong data-final="${escapeHTML(s.value)}">0</strong>
+    if (filtered.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3>No creators found</h3>
+                <p>Try adjusting your search terms or selecting a different category.</p>
             </div>
-        `).join("");
-
-        grid.querySelectorAll("strong[data-final]").forEach(el => animateStatValue(el));
-    }
-
-    modal.classList.add("show");
-    document.body.style.overflow = "hidden";
-}
-
-function animateStatValue(el) {
-    const finalText = el.getAttribute("data-final");
-    const numericMatch = finalText.match(/^-?[\d.]+/);
-
-    if (!numericMatch) {
-        // Not a leading number (e.g. "Sweden") — just fade it in as-is.
-        el.textContent = finalText;
-        el.classList.add("stat-fade-in");
+        `;
         return;
     }
 
-    const numTarget = parseFloat(numericMatch[0]);
-    const suffix = finalText.slice(numericMatch[0].length);
-    const duration = 650;
-    const start = performance.now();
+    grid.innerHTML = filtered.map(creator => {
+        const rank = getSortRank(creator, currentSortBy);
+        return `
+            <div class="youtuber-card" tabIndex="0" data-id="${creator.id}">
+                <div class="banner-container">
+                    <img class="channel-banner" src="${creator.banner}" alt="${creator.name} Banner" loading="lazy" />
+                    <div class="avatar-wrapper">
+                        <img class="creator-avatar" src="${creator.avatar}" alt="${creator.name} Avatar" loading="lazy" />
+                    </div>
+                    <span class="rank-badge">#${rank}</span>
+                </div>
+                <div class="card-body">
+                    <h3>${creator.name} <span class="verified-badge">✓</span></h3>
+                    <div class="handle">${creator.handle}</div>
+                    <div class="sub-count">${creator.subscribers} subscribers</div>
+                    <span class="niche-badge">${creator.niche}</span>
+                    <p class="bio">${creator.bio}</p>
+                </div>
+            </div>
+        `;
+    }).join("");
 
-    function tick(now) {
-        const progress = Math.min(1, (now - start) / duration);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = numTarget * eased;
-        const decimals = numericMatch[0].includes(".") ? 2 : 0;
-        el.textContent = current.toFixed(decimals) + suffix;
-        if (progress < 1) requestAnimationFrame(tick);
-        else el.textContent = finalText;
-    }
-    requestAnimationFrame(tick);
+    grid.querySelectorAll(".youtuber-card").forEach(card => {
+        if (cardObserver) cardObserver.observe(card);
+        card.addEventListener("click", () => {
+            const creator = YOUTUBERS_DATA.find(c => c.id === card.dataset.id);
+            if (creator) openModal(creator);
+        });
+        card.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                const creator = YOUTUBERS_DATA.find(c => c.id === card.dataset.id);
+                if (creator) openModal(creator);
+            }
+        });
+    });
 }
 
-function closeModal(event) {
-    const modal = document.getElementById("creatorModal");
-    if (modal) modal.classList.remove("show");
-    document.body.style.overflow = "";
+function openModal(creator) {
+    let overlay = document.querySelector(".modal-overlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.className = "modal-overlay";
+        document.body.appendChild(overlay);
+    }
+
+    const statBlocks = buildStatBlocks(creator);
+
+    overlay.innerHTML = `
+        <div class="modal-content">
+            <button class="modal-close-btn" aria-label="Close modal">&times;</button>
+            <img class="modal-banner" src="${creator.banner}" alt="${creator.name} Banner" />
+            <div class="modal-header-info">
+                <div class="modal-identity">
+                    <div class="modal-avatar-wrapper">
+                        <img class="modal-avatar" src="${creator.avatar}" alt="${creator.name}" />
+                    </div>
+                    <div class="modal-name-block">
+                        <h2 style="margin: 0; font-size: 1.4rem;">${creator.name}</h2>
+                        <div class="handle">${creator.handle}</div>
+                    </div>
+                </div>
+                <button class="subscribe-btn">Subscribe</button>
+            </div>
+            <div class="modal-body">
+                <h4 class="section-label">Channel Overview</h4>
+                <div class="stats-grid">
+                    ${statBlocks.map((s, idx) => `
+                        <div class="stat-item stat-anim" style="animation-delay: ${idx * 0.04}s;">
+                            <span>${s.icon}${s.label}</span>
+                            <strong>${s.value}</strong>
+                        </div>
+                    `).join("")}
+                </div>
+                
+                <h4 class="section-label">Most Popular Upload</h4>
+                <div class="popular-upload">
+                    <img src="${creator.popularVideo.thumb}" alt="${creator.popularVideo.title}" />
+                    <div>
+                        <strong style="color: #fff; font-size: 0.95rem; display: block;">${creator.popularVideo.title}</strong>
+                        <span style="color: #aaa; font-size: 0.85rem;">${creator.popularVideo.views}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    overlay.classList.add("show");
+
+    const closeBtn = overlay.querySelector(".modal-close-btn");
+    closeBtn.addEventListener("click", closeModal);
+    overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) closeModal();
+    });
+}
+
+function closeModal() {
+    const overlay = document.querySelector(".modal-overlay");
+    if (overlay) overlay.classList.remove("show");
 }
 
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeModal();
+});
+
+/* ------------------------------------------------------------------
+   INIT
+------------------------------------------------------------------- */
+
+document.addEventListener("DOMContentLoaded", () => {
+    setupScrollReveal();
+    renderNicheFilterButtons();
+    handleRealtimeSearch();
+    renderYoutubers();
 });
