@@ -1,15 +1,17 @@
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Literal
+from datetime import datetime, timezone
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
+from pydantic import BaseModel, Field
 
 
 app = FastAPI(
     title="YouTuber Archive API",
     description="A searchable directory of YouTube creators and channel metrics.",
-    version="3.0.0",
+    version="4.0.0",
 )
 
 app.add_middleware(
@@ -19,6 +21,52 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------------------------
+# PYDANTIC SCHEMA: every creator dict must match this shape. Literal[...]
+# only allows these exact niche values, and Field(...) adds runtime rules
+# like "subscriber count must be zero or greater".
+# ---------------------------------------------------------------------------
+class PopularVideo(BaseModel):
+    title: str
+    views: str
+    thumb: str
+
+
+class Youtuber(BaseModel):
+    id: int
+    name: str
+    handle: str
+    niche: Literal[
+        "Gaming", "Entertainment", "Education", "Tech & Gadgets",
+        "Lifestyle & Vlog", "Family", "Comedy", "Music",
+        "News & Commentary", "Food", "Beauty & Fashion", "Sports"
+    ]
+    country: str
+    subscribers: str
+    rawSubs: int = Field(..., ge=0, description="Subscriber count as a real integer")
+    totalViews: str
+    rawViews: int = Field(..., ge=0)
+    videoCount: int = Field(..., ge=0)
+    avatar: str
+    banner: str
+    bio: str
+    joinedYear: int = Field(..., ge=2005, le=2026)
+    popularVideo: PopularVideo
+
+
+# ---------------------------------------------------------------------------
+# API KEY DEPENDENCY: protected routes require this header:
+#   x-api-key: supersecret123
+# ---------------------------------------------------------------------------
+API_KEY = "supersecret123"
+
+
+def verify_api_key(x_api_key: str = Header(default=None)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="Unauthorized: missing or invalid API key.")
+    return x_api_key
 
 
 def creator(
@@ -144,6 +192,15 @@ for index, spec in enumerate(additional_creator_specs, start=11):
     creators.append(creator(index, name, handle, niche, country, subscribers, raw_subs, total_views, raw_views, video_count, joined_year, f"Official videos, stories, and updates from {name}."))
 
 
+# ---------------------------------------------------------------------------
+# ON-BOOT VALIDATION: runs once when the server starts. Every dict in
+# `creators` gets passed through the Youtuber model; if any record has the
+# wrong type, the server crashes here immediately instead of failing later
+# on a real user's request.
+# ---------------------------------------------------------------------------
+validated_creators: List[Dict[str, Any]] = [Youtuber(**c).model_dump() for c in creators]
+
+
 @app.get("/", response_class=HTMLResponse)
 def home():
     file_path = os.path.join(os.path.dirname(__file__), "../index.html")
@@ -193,6 +250,46 @@ def search_creators(q: str = Query(..., min_length=1)) -> Dict[str, Any]:
 @app.get("/youtubers/{creator_id}")
 def get_creator(creator_id: int) -> Dict[str, Any]:
     match = next((item for item in creators if item["id"] == creator_id), None)
+    if match is None:
+        raise HTTPException(status_code=404, detail="Creator not found.")
+    return match
+
+
+# ---------------------------------------------------------------------------
+# HEALTH ENDPOINT: public, no API key needed. Cloud platforms (Vercel, AWS,
+# Docker) ping this on a schedule to confirm the service is alive.
+# ---------------------------------------------------------------------------
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "service": "YouTuber Archive API",
+        "timestamp_utc": datetime.now(timezone.utc).isoformat()
+    }
+
+
+# ---------------------------------------------------------------------------
+# VERSIONED + PROTECTED ROUTES: everything under /api/v1/ requires the
+# x-api-key header, enforced by dependencies=[Depends(verify_api_key)].
+# ---------------------------------------------------------------------------
+@app.get("/api/v1/creators", dependencies=[Depends(verify_api_key)])
+def get_creators_v1() -> Dict[str, Any]:
+    return {"count": len(validated_creators), "creators": validated_creators}
+
+
+@app.get("/api/v1/creators/search", dependencies=[Depends(verify_api_key)])
+def search_creators_v1(q: str = Query(..., min_length=1)) -> Dict[str, Any]:
+    query = q.strip().lower()
+    results = [
+        item for item in validated_creators
+        if query in " ".join(str(value) for value in item.values()).lower()
+    ]
+    return {"query": query, "count": len(results), "results": results}
+
+
+@app.get("/api/v1/creators/{creator_id}", dependencies=[Depends(verify_api_key)])
+def get_creator_v1(creator_id: int) -> Dict[str, Any]:
+    match = next((item for item in validated_creators if item["id"] == creator_id), None)
     if match is None:
         raise HTTPException(status_code=404, detail="Creator not found.")
     return match
