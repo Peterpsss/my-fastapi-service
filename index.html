@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Creator Archive</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header>
+        <div class="brand-badge">
+            <span class="brand-icon"></span>
+            <h1>YouTuber Archive</h1>
+        </div>
+        <p>Analytics, metrics, and global creator insights directory</p>
+    </header>
+
+    <div class="data-note">
+        📊 Subscriber, view, and video counts were checked against Social Blade / vidIQ as of late Aug 2026. Real YouTube numbers change constantly, so treat these as close-to-current snapshots rather than live figures. Estimated earnings are modeled from views (vidIQ's own Earnings Checker works the same way: an estimate based on views and engagement, not an official figure). Channel banners below are stylized placeholders — YouTube doesn't expose real banner images without an authenticated API key — while avatars are pulled live from each channel.
+    </div>
+
+    <main>
+        <section class="search-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search creators by name, handle, or letter..." onkeyup="handleRealtimeSearch()">
+                <button class="primary-btn" onclick="handleRealtimeSearch()">Search</button>
+            </div>
+
+            <div class="controls-row">
+                <div class="category-chips" id="categoryContainer"></div>
+
+                <div class="sort-container">
+                    <label for="sortSelect">Sort By:</label>
+                    <select id="sortSelect" onchange="sortAndDisplayYoutubers()">
+                        <option value="subs">Most Subscribers</option>
+                        <option value="views">Total Views</option>
+                        <option value="videos">Video Count</option>
+                        <option value="year">Joined Year</option>
+                        <option value="earnings">Est. Earnings</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <div id="searchBanner" class="search-banner" style="display: none;"></div>
+
+        <h2>Featured Creators</h2>
+        <div class="youtuber-list" id="youtuberList"></div>
+    </main>
+
+    <div class="modal-overlay" id="creatorModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="modal-close-btn" onclick="closeModal()">&times;</button>
+            
+            <img id="modalBanner" class="modal-banner" src="" alt="Banner">
+            
+            <div class="modal-header-info">
+                <button class="subscribe-btn">Subscribe</button>
+                <div class="modal-identity">
+                    <div class="modal-avatar-wrapper">
+                        <img id="modalAvatar" class="modal-avatar" src="" alt="Avatar">
+                    </div>
+                    <div class="modal-name-block">
+                        <h2 id="modalName" style="margin: 0; color: white;">Creator Name <span class="verified-badge" title="Verified">✔</span></h2>
+                        <div id="modalHandle" style="color: #aaa; font-size: 0.9rem;">@handle</div>
+                        <div id="modalRankBadge" class="rank-pill">Rank #0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-body">
+                <h4 class="section-label">Channel Analytics <span class="section-sub">10 channel metrics</span></h4>
+                <div class="stats-grid" id="modalStatsGrid">
+                    <!-- 14 stat tiles injected by app.js -->
+                </div>
+
+                <h4 class="section-label">About Channel</h4>
+                <p id="modalBio" style="color: #ccc; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px;"></p>
+
+                <h4 class="section-label">Most Popular Upload</h4>
+                <div class="popular-upload">
+                    <img id="modalUploadThumb" src="" alt="Video Thumbnail">
+                    <div>
+                        <strong id="modalUploadTitle" style="color: white; font-size: 0.9rem; display: block; margin-bottom: 4px;">Video Title</strong>
+                        <span id="modalUploadViews" style="color: #aaa; font-size: 0.8rem;">0 views</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 YouTuber Archive - Global Creator Analytics Directory</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
