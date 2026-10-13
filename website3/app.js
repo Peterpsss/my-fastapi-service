@@ -11,8 +11,8 @@ const API_ENDPOINTS = [
 // WEBSITE NAVIGATION
 const SITE_URLS = {
   archive: "https://my-fastapi-service-sigma.vercel.app/",
-  games: "https://my-fastapi-service-web2.vercel.app/",
-  matcher: "https://my-fastapi-service-web3.vercel.app/"
+  games: "https://my-fastapi-service-website2.vercel.app//",
+  matcher: "https://my-fastapi-service-website3.vercel.app/"
 };
 
 const STORAGE_KEY = "youtubeTasteMatcherResultsV1";
