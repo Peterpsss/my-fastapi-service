@@ -14,12 +14,27 @@
   <div class="ambient ambient-one" aria-hidden="true"></div>
   <div class="ambient ambient-two" aria-hidden="true"></div>
 
-  <header class="topbar">
-    <button class="brand" type="button" data-route="home" aria-label="Go to home">
-      <span class="yt-mark" aria-hidden="true"><span></span></span>
-      <span>YouTube Games</span>
-    </button>
+  <!-- UNIVERSAL NAVIGATION -->
+  <header class="site-header">
+    <a class="brand" href="#" id="brandHome" aria-label="Home">
+      <span class="brand-mark">▶</span>
+      <span>
+        <strong>YouTube Games</strong>
+        <small>Higher/Lower & Daily</small>
+      </span>
+    </a>
 
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+
+    <nav class="site-nav" id="siteNav" aria-label="Project websites">
+      <a id="archiveLink" href="#">YouTuber Archive</a>
+      <a id="gamesLink" class="active" href="#">YouTube Games</a>
+      <a id="matcherLink" href="#">Taste Matcher</a>
+    </nav>
+  </header>
+
+  <!-- INTERNAL APP NAVIGATION -->
+  <div class="topbar">
     <nav class="main-nav" aria-label="Main navigation">
       <button class="nav-link active" type="button" data-route="home">Home</button>
       <button class="nav-link" type="button" data-route="higher-lower">Higher or Lower</button>
@@ -30,7 +45,7 @@
       <span class="status-dot"></span>
       <span id="apiStatusText">Connecting</span>
     </div>
-  </header>
+  </div>
 
   <main id="app" class="app-shell" tabindex="-1">
     <section id="loadingView" class="state-screen">

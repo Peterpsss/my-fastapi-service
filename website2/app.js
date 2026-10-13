@@ -4,6 +4,30 @@ const API_ENDPOINT = "/api/v1/creators";
 const PUBLIC_API_ENDPOINT = "/creators";
 const API_TIMEOUT_MS = 12000;
 
+// --- UNIVERSAL NAVIGATION ---
+const SITE_URLS = {
+  archive: "https://my-fastapi-service-sigma.vercel.app/",
+  games: "https://my-fastapi-service-website2.vercel.app/",
+  matcher: "https://my-fastapi-service-website3.vercel.app/"
+};
+
+function setNavigation() {
+  document.getElementById("archiveLink").href = SITE_URLS.archive;
+  document.getElementById("gamesLink").href = SITE_URLS.games;
+  document.getElementById("matcherLink").href = SITE_URLS.matcher;
+  
+  const navToggle = document.getElementById("navToggle");
+  const siteNav = document.getElementById("siteNav");
+  
+  if (navToggle && siteNav) {
+    navToggle.addEventListener("click", () => {
+      siteNav.classList.toggle("open");
+      navToggle.setAttribute("aria-expanded", siteNav.classList.contains("open") ? "true" : "false");
+    });
+  }
+}
+// ----------------------------
+
 const DAILY_MAX_GUESSES = 6;
 const STORAGE_KEYS = {
   higherLowerBest: "youtubeGames_higherLowerBest",
@@ -29,8 +53,7 @@ const metricConfig = {
   videoCount: { label: "Videos", display: creator => Number(creator.videoCount || 0).toLocaleString() }
 };
 
-const $ = selector => document.querySelector(selector);
-const $$ = selector => [...document.querySelectorAll(selector)];
+const $ = selector => document.querySelector(selector); const $$ = selector => [...document.querySelectorAll(selector)];
 
 function safeText(value, fallback = "N/A") {
   return value === undefined || value === null || value === "" ? fallback : String(value);
@@ -108,8 +131,6 @@ async function requestCreatorData() {
 
   if (response.ok) return response.json();
 
-  // Your original API also exposes /creators publicly. This fallback keeps the
-  // project usable if the protected route is unavailable during local testing.
   if ([401, 403, 404].includes(response.status)) {
     const publicResponse = await fetchWithTimeout(`${base}${PUBLIC_API_ENDPOINT}`, {
       method: "GET",
@@ -151,8 +172,7 @@ async function loadCreators() {
 
 function showGlobalState(state, message = "") {
   $("#loadingView").classList.toggle("hidden", state !== "loading");
-  $("#errorView").classList.toggle("hidden", state !== "error");
-  $$(".view").forEach(view => view.classList.add("hidden"));
+  $("#errorView").classList.toggle("hidden", state !== "error"); $$(".view").forEach(view => view.classList.add("hidden"));
   if (state === "error") $("#errorMessage").textContent = message;
 }
 
@@ -163,23 +183,8 @@ function initializeAfterDataLoad() {
   setTimeout(() => {
     $("#loadingView").classList.add("hidden");
     $("#loadingView").classList.remove("exit-state");
-    $("#errorView").classList.add("hidden");
-    navigateTo("home");
-  }, 320);
-}
-
-function navigateTo(route) {
-  const map = {
-    home: "#homeView",
-    "higher-lower": "#higherLowerView",
-    daily: "#dailyView"
-  };
-  if (!map[route]) return;
-
-  currentRoute = route;
-  $$(".view").forEach(view => view.classList.add("hidden"));
-  $(map[route]).classList.remove("hidden");
-  $$(".nav-link").forEach(link => link.classList.toggle("active", link.dataset.route === route));
+    $("#errorView").classList.add("hidden"); navigateTo("home"); }, 320); }  function navigateTo(route) { const map = { home: "#homeView", "higher-lower": "#higherLowerView", daily: "#dailyView" }; if (!map[route]) return;    currentRoute = route; $$(".view").forEach(view => view.classList.add("hidden"));
+  $(map[route]).classList.remove("hidden"); $$(".nav-link").forEach(link => link.classList.toggle("active", link.dataset.route === route));
 
   if (route === "home") updatePlayerStats();
   if (route === "daily") renderDailyGame();
@@ -263,8 +268,7 @@ function answerHigherLower(answer) {
   const isCorrect = answer === correctAnswer;
 
   $("#rightCreatorCard").innerHTML = renderCreatorBattleCard(rightCreator, true);
-  $("#rightCreatorCard").classList.add("reveal-pop");
-  $$(".answer-btn").forEach(button => button.disabled = true);
+  $("#rightCreatorCard").classList.add("reveal-pop"); $$(".answer-btn").forEach(button => button.disabled = true);
 
   const clicked = $(`.answer-btn[data-answer="${answer}"]`);
   clicked.classList.add(isCorrect ? "correct" : "wrong");
@@ -283,8 +287,7 @@ function answerHigherLower(answer) {
       rightCreator = randomCreator([leftCreator.id]);
       roundLocked = false;
       $("#roundFeedback").textContent = "";
-      $("#roundFeedback").className = "round-feedback";
-      $$(".answer-btn").forEach(button => {
+      $("#roundFeedback").className = "round-feedback"; $$(".answer-btn").forEach(button => {
         button.disabled = false;
         button.classList.remove("correct", "wrong");
       });
@@ -658,12 +661,7 @@ function updatePlayerStats() {
   animateStatNumber($("#bestHigherLower"), getHigherLowerBest());
   animateStatNumber($("#dailyGames"), daily.gamesPlayed);
   animateStatNumber($("#dailyWins"), daily.wins);
-  animateStatNumber($("#dailyStreak"), daily.currentStreak);
-}
-
-function setupCardMotion() {
-  if (window.matchMedia("(pointer: coarse)").matches) return;
-  $$(".mode-card").forEach(card => {
+  animateStatNumber($("#dailyStreak"), daily.currentStreak); }  function setupCardMotion() { if (window.matchMedia("(pointer: coarse)").matches) return; $$(".mode-card").forEach(card => {
     card.addEventListener("pointermove", event => {
       const rect = card.getBoundingClientRect();
       const x = (event.clientX - rect.left) / rect.width - 0.5;
@@ -685,8 +683,8 @@ function setupEvents() {
     element.addEventListener("click", () => navigateTo(element.dataset.route));
   });
 
-  $$(".metric-btn").forEach(button => button.addEventListener("click", () => startHigherLower(button.dataset.metric)));
-  $$(".answer-btn").forEach(button => button.addEventListener("click", () => answerHigherLower(button.dataset.answer)));
+  $$(".metric-btn").forEach(button => button.addEventListener("click", () => startHigherLower(button.dataset.metric))); $$
+(".answer-btn").forEach(button => button.addEventListener("click", () => answerHigherLower(button.dataset.answer)));
 
   $("#changeMetricButton").addEventListener("click", resetHigherLowerToPicker);
   $("#playAgainButton").addEventListener("click", () => startHigherLower(selectedMetric));
@@ -694,8 +692,7 @@ function setupEvents() {
   $("#showApiHelpButton").addEventListener("click", () => $("#apiHelp").classList.toggle("hidden"));
 
   $("#creatorGuessInput").addEventListener("input", handleDailyInput);
-  $("#creatorGuessInput").addEventListener("keydown", event => {
-    const suggestions = $$("#autocompleteList .suggestion[data-id]");
+  $("#creatorGuessInput").addEventListener("keydown", event => { const suggestions = $$("#autocompleteList .suggestion[data-id]");
     if (event.key === "ArrowDown" && suggestions.length) {
       event.preventDefault();
       activeSuggestionIndex = Math.min(activeSuggestionIndex + 1, suggestions.length - 1);
@@ -731,6 +728,7 @@ function setupEvents() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  setNavigation();
   setupEvents();
   setupCardMotion();
   loadCreators();
