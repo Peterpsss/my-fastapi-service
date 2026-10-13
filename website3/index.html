@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="YouTube Taste Matcher recommends creators based on your viewing preferences.">
+  <title>YouTube Taste Matcher</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="background-glow glow-one"></div>
+  <div class="background-glow glow-two"></div>
+
+  <header class="site-header">
+    <a class="brand" href="#" id="brandHome" aria-label="YouTube Taste Matcher home">
+      <span class="brand-mark">▶</span>
+      <span>
+        <strong>YouTube Taste Matcher</strong>
+        <small>Find creators made for your feed.</small>
+      </span>
+    </a>
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+
+    <nav class="site-nav" id="siteNav" aria-label="Project websites">
+      <a id="archiveLink" href="#">YouTuber Archive</a>
+      <a id="gamesLink" href="#">YouTube Games</a>
+      <a id="matcherLink" class="active" href="#">Taste Matcher</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="screen landing-screen active" id="landingScreen">
+      <div class="hero-copy">
+        <p class="eyebrow">PERSONALIZED CREATOR DISCOVERY</p>
+        <h1>Find Your <span>YouTube Match</span></h1>
+        <p class="hero-subtitle">Answer a few questions and discover creators that match your viewing style.</p>
+
+        <div class="hero-actions">
+          <button class="primary-button" id="startButton">START MATCHING <span>→</span></button>
+          <button class="secondary-button hidden" id="viewSavedButton">VIEW RESULTS</button>
+        </div>
+
+        <p class="api-note"><span class="status-dot"></span> Personalized using creator data from our YouTuber API.</p>
+        <div class="welcome-back hidden" id="welcomeBack">
+          Welcome back — your previous matches are saved on this device.
+          <button id="retakeFromHome">Retake quiz</button>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <div class="taste-orbit orbit-one"></div>
+        <div class="taste-orbit orbit-two"></div>
+        <div class="hero-card hero-card-main">
+          <span class="mini-label">YOUR NEXT FAVORITE CREATOR</span>
+          <div class="mock-avatar">YT</div>
+          <div class="mock-lines">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="mock-score">94%</div>
+        </div>
+        <div class="floating-pill pill-one">Gaming</div>
+        <div class="floating-pill pill-two">Established</div>
+        <div class="floating-pill pill-three">Large Library</div>
+      </div>
+
+      <div class="how-it-works">
+        <article><span>01</span><div><h3>Tell us what you like.</h3><p>Choose the content, creator size, and viewing style you enjoy.</p></div></article>
+        <article><span>02</span><div><h3>We analyze your taste.</h3><p>Your answers become weighted matching criteria.</p></div></article>
+        <article><span>03</span><div><h3>Get your best matches.</h3><p>Creators are ranked using real API data and deterministic scores.</p></div></article>
+      </div>
+    </section>
+
+    <section class="screen quiz-screen" id="quizScreen">
+      <div class="quiz-shell">
+        <div class="quiz-topline">
+          <button class="text-button" id="exitQuizButton">← Exit</button>
+          <span id="questionCounter">Question 1 of 10</span>
+        </div>
+
+        <div class="progress-track" aria-label="Quiz progress">
+          <div class="progress-fill" id="quizProgress"></div>
+        </div>
+
+        <div class="question-panel" id="questionPanel">
+          <p class="eyebrow" id="questionEyebrow">YOUR TASTE</p>
+          <h2 id="questionTitle"></h2>
+          <p class="question-help" id="questionHelp"></p>
+          <div class="options-grid" id="optionsGrid"></div>
+          <div class="slider-wrap hidden" id="sliderWrap"></div>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="secondary-button" id="backButton">BACK</button>
+          <button class="primary-button" id="continueButton">CONTINUE <span>→</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen analysis-screen" id="analysisScreen">
+      <div class="analysis-card">
+        <div class="scanner">
+          <div class="scanner-ring"><span>▶</span></div>
+          <div class="scanner-line"></div>
+        </div>
+        <p class="eyebrow">BUILDING YOUR FEED</p>
+        <h2>Analyzing your YouTube taste...</h2>
+        <p id="analysisMessage">Comparing your favorite categories.</p>
+        <div class="analysis-progress"><div id="analysisProgressFill"></div></div>
+      </div>
+    </section>
+
+    <section class="screen results-screen" id="resultsScreen">
+      <div class="results-heading">
+        <div>
+          <p class="eyebrow">PERSONALIZED FOR YOU</p>
+          <h2>Your Top Matches</h2>
+          <p>Ranked from highest to lowest compatibility using your answers.</p>
+        </div>
+        <button class="secondary-button" id="homeFromResults">HOME</button>
+      </div>
+
+      <section class="taste-profile" id="tasteProfile"></section>
+
+      <div class="results-list" id="resultsList"></div>
+
+      <div class="result-actions">
+        <button class="primary-button" id="retakeButton">RETAKE QUIZ</button>
+        <button class="secondary-button" id="changeAnswersButton">CHANGE ANSWERS</button>
+        <button class="secondary-button" id="surpriseButton">SURPRISE ME</button>
+      </div>
+    </section>
+
+    <section class="screen error-screen" id="errorScreen">
+      <div class="error-card">
+        <span class="error-icon">!</span>
+        <p class="eyebrow">CONNECTION ISSUE</p>
+        <h2>We couldn't load creator data.</h2>
+        <p id="errorMessage">Check your API configuration and try again.</p>
+        <button class="primary-button" id="retryButton">RETRY</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-backdrop hidden" id="creatorModal" role="dialog" aria-modal="true" aria-labelledby="modalCreatorName">
+    <div class="creator-modal">
+      <button class="modal-close" id="closeModal" aria-label="Close details">×</button>
+      <div class="modal-banner" id="modalBanner"></div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>YouTube Taste Matcher · API → Preferences → Score → Recommend</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

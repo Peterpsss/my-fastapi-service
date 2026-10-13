@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="YouTube Games - Higher or Lower and Daily YouTuber powered by a YouTuber API." />
+  <title>YouTube Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <button class="brand" type="button" data-route="home" aria-label="Go to home">
+      <span class="yt-mark" aria-hidden="true"><span></span></span>
+      <span>YouTube Games</span>
+    </button>
+
+    <nav class="main-nav" aria-label="Main navigation">
+      <button class="nav-link active" type="button" data-route="home">Home</button>
+      <button class="nav-link" type="button" data-route="higher-lower">Higher or Lower</button>
+      <button class="nav-link" type="button" data-route="daily">Daily YouTuber</button>
+    </nav>
+
+    <div class="api-status" id="apiStatus" aria-live="polite">
+      <span class="status-dot"></span>
+      <span id="apiStatusText">Connecting</span>
+    </div>
+  </header>
+
+  <main id="app" class="app-shell" tabindex="-1">
+    <section id="loadingView" class="state-screen">
+      <div class="loader-wrap" aria-hidden="true">
+        <div class="spinner"></div>
+        <div class="loader-pulse"></div>
+      </div>
+      <p class="eyebrow">YOUTUBE GAMES</p>
+      <h1>Loading creator data</h1>
+      <p id="loadingMessage">Connecting to the creator API...</p>
+    </section>
+
+    <section id="errorView" class="state-screen hidden" aria-live="polite">
+      <div class="state-icon">!</div>
+      <p class="eyebrow">CONNECTION ERROR</p>
+      <h1>Could not load creator data</h1>
+      <p id="errorMessage">Please check the API configuration and try again.</p>
+      <div class="error-actions">
+        <button id="retryButton" class="btn btn-primary" type="button">Retry Connection</button>
+        <button id="showApiHelpButton" class="btn btn-ghost" type="button">Show API Setup</button>
+      </div>
+      <div id="apiHelp" class="api-help hidden">
+        <strong>Check app.js → API_BASE_URL</strong>
+        <p>Use the URL where your FastAPI service is deployed. The game requests <code>/api/v1/creators</code> with the <code>x-api-key</code> header.</p>
+      </div>
+    </section>
+
+    <section id="homeView" class="view hidden">
+      <div class="hero">
+        <div class="hero-badge"><span></span> API-powered creator games</div>
+        <h1>How well do you know <span>YouTube?</span></h1>
+        <p class="hero-copy">Test your instincts with creator statistics, then return every day for a new mystery YouTuber.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-large" type="button" data-route="higher-lower">Start Playing</button>
+          <button class="btn btn-ghost btn-large" type="button" data-route="daily">Today's Challenge</button>
+        </div>
+      </div>
+
+      <div class="mode-grid">
+        <article class="mode-card red-glow">
+          <div class="card-shine" aria-hidden="true"></div>
+          <div class="mode-top">
+            <div class="mode-icon">↕</div>
+            <span class="mode-tag">ENDLESS</span>
+          </div>
+          <div>
+            <p class="mode-kicker">HIGHER OR LOWER</p>
+            <h2>Beat your best streak.</h2>
+            <p>Compare two creators by subscribers, total views, or video count. One wrong answer ends the run.</p>
+          </div>
+          <button class="btn btn-primary" type="button" data-route="higher-lower">Play Higher or Lower</button>
+        </article>
+
+        <article class="mode-card green-glow">
+          <div class="card-shine" aria-hidden="true"></div>
+          <div class="mode-top">
+            <div class="mode-icon">#</div>
+            <span class="mode-tag daily-tag">DAILY</span>
+          </div>
+          <div>
+            <p class="mode-kicker">DAILY YOUTUBER</p>
+            <h2>Six guesses. One creator.</h2>
+            <p>Use Wordle-style clues for country, niche, subscribers, views, and join year to solve today's creator.</p>
+          </div>
+          <button class="btn btn-secondary" type="button" data-route="daily">Play Daily YouTuber</button>
+        </article>
+      </div>
+
+      <section class="stats-panel" aria-labelledby="statsHeading">
+        <div class="stats-heading-row">
+          <div>
+            <p class="eyebrow">YOUR STATS</p>
+            <h2 id="statsHeading">Player Progress</h2>
+          </div>
+          <span class="stats-note">Saved on this browser</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><strong id="bestHigherLower">0</strong><span>Best H/L Streak</span></div>
+          <div class="stat-card"><strong id="dailyGames">0</strong><span>Daily Games</span></div>
+          <div class="stat-card"><strong id="dailyWins">0</strong><span>Daily Wins</span></div>
+          <div class="stat-card"><strong id="dailyStreak">0</strong><span>Daily Streak</span></div>
+        </div>
+      </section>
+    </section>
+
+    <section id="higherLowerView" class="view hidden">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">HIGHER OR LOWER</p>
+          <h1>Trust your YouTube instincts.</h1>
+          <p class="section-copy">Choose a metric, compare creators, and keep the streak alive.</p>
+        </div>
+        <button class="btn btn-ghost" type="button" data-route="home">Back Home</button>
+      </div>
+
+      <section id="metricPicker" class="metric-picker">
+        <h2>Choose what to compare</h2>
+        <p>Each round uses creator values returned by your FastAPI service.</p>
+        <div class="metric-buttons">
+          <button class="metric-btn" type="button" data-metric="rawSubs"><span class="metric-symbol">👥</span><span>Subscribers</span><small>Who has more subscribers?</small></button>
+          <button class="metric-btn" type="button" data-metric="rawViews"><span class="metric-symbol">▶</span><span>Total Views</span><small>Who has more lifetime views?</small></button>
+          <button class="metric-btn" type="button" data-metric="videoCount"><span class="metric-symbol">▦</span><span>Video Count</span><small>Who has uploaded more?</small></button>
+        </div>
+      </section>
+
+      <section id="higherLowerGame" class="hidden">
+        <div class="score-strip">
+          <span>Score <strong id="hlScore">0</strong></span>
+          <span>Best <strong id="hlBest">0</strong></span>
+          <span class="metric-display">Metric <strong id="currentMetricLabel">Subscribers</strong></span>
+          <button id="changeMetricButton" class="text-button" type="button">Change metric</button>
+        </div>
+
+        <div class="battle-grid">
+          <article id="leftCreatorCard" class="battle-card"></article>
+          <div class="versus-badge">VS</div>
+          <article id="rightCreatorCard" class="battle-card"></article>
+        </div>
+
+        <div id="answerControls" class="answer-controls">
+          <button class="answer-btn higher" type="button" data-answer="higher"><span>Higher</span><b>↑</b></button>
+          <button class="answer-btn lower" type="button" data-answer="lower"><span>Lower</span><b>↓</b></button>
+        </div>
+
+        <div id="roundFeedback" class="round-feedback" aria-live="polite"></div>
+      </section>
+
+      <section id="gameOverPanel" class="game-over hidden" aria-live="polite">
+        <div class="game-over-icon">✕</div>
+        <p class="eyebrow">GAME OVER</p>
+        <h2>Final score: <span id="finalScore">0</span></h2>
+        <p id="correctAnswerText"></p>
+        <div class="game-over-actions">
+          <button id="playAgainButton" class="btn btn-primary" type="button">Play Again</button>
+          <button class="btn btn-ghost" type="button" data-route="home">Return Home</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="dailyView" class="view hidden">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">DAILY YOUTUBER</p>
+          <h1>One creator. Six guesses.</h1>
+          <p class="section-copy">A new mystery creator is selected deterministically every calendar day.</p>
+        </div>
+        <button class="btn btn-ghost" type="button" data-route="home">Back Home</button>
+      </div>
+
+      <section class="daily-shell">
+        <div class="daily-topline">
+          <div>
+            <span class="daily-number" id="dailyNumber">Daily #1</span>
+            <p id="dailyDateText"></p>
+          </div>
+          <div class="attempt-counter"><strong id="attemptCount">0</strong>/6 guesses</div>
+        </div>
+
+        <div id="dailyInputArea" class="guess-area">
+          <label for="creatorGuessInput">Search for a creator</label>
+          <div class="autocomplete-wrap">
+            <input id="creatorGuessInput" type="text" autocomplete="off" placeholder="Start typing a YouTuber name..." />
+            <div id="autocompleteList" class="autocomplete-list hidden" role="listbox"></div>
+          </div>
+          <button id="submitGuessButton" class="btn btn-primary" type="button" disabled>Submit Guess</button>
+        </div>
+
+        <div class="clue-legend" aria-label="Clue legend">
+          <span><i class="legend-dot exact"></i>Exact</span>
+          <span><i class="legend-dot close"></i>Close</span>
+          <span><i class="legend-dot miss"></i>Different</span>
+          <span class="legend-tip">↑ target is higher • ↓ target is lower</span>
+        </div>
+
+        <div class="guess-table-wrap">
+          <div class="guess-table header-row" aria-hidden="true">
+            <div>Creator</div><div>Country</div><div>Niche</div><div>Subscribers</div><div>Views</div><div>Joined</div>
+          </div>
+          <div id="guessHistory" class="guess-history"></div>
+        </div>
+
+        <section id="dailyResult" class="daily-result hidden" aria-live="polite"></section>
+      </section>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="confettiLayer" class="confetti-layer" aria-hidden="true"></div>
+
+  <footer>
+    <p>YouTube Games • API-powered interactive project</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
