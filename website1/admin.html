@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>Admin panel - YouTuber Archive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="yt-core.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+  <main id="main" tabindex="-1">
+    <noscript><p class="noscript">This page needs JavaScript.</p></noscript>
+    <div class="yt-container admin" id="adminRoot">
+      <div id="adminGate"></div>
+      <div id="adminApp" hidden>
+        <header class="admin-head">
+          <div>
+            <p class="yt-eyebrow" id="adminRole">Admin</p>
+            <h1 id="adminTitle">Admin panel</h1>
+            <p class="admin-sub" id="adminSub"></p>
+          </div>
+          <div class="admin-head-actions">
+            <button class="yt-btn yt-btn-ghost" type="button" id="exportBtn">Export CSV</button>
+            <a class="yt-btn yt-btn-ghost" href="index.html">View site</a>
+          </div>
+        </header>
+        <div class="admin-tabs" role="tablist" aria-label="Admin sections" id="adminTabs"></div>
+        <div id="adminPanel" class="admin-panel" role="tabpanel" tabindex="-1" aria-live="polite"></div>
+      </div>
+    </div>
+  </main>
+  <script src="yt-core.js"></script>
+  <script src="yt-auth.js"></script>
+  <script src="admin-editor.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

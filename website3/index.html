@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="YouTuber Taste Matcher: pick what you like to watch and get YouTubers made for you, with a plain-language reason for every match.">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>YouTuber Taste Matcher - find YouTubers made for you</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="yt-core.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="main" tabindex="-1">
+    <noscript><p class="noscript">The Taste Matcher needs JavaScript to run.</p></noscript>
+
+    <!-- LOADING / ERROR -->
+    <section class="screen yt-container active" id="stateScreen" aria-live="polite"></section>
+
+    <!-- LANDING -->
+    <section class="screen yt-container" id="landingScreen" aria-labelledby="landingTitle">
+      <div class="landing">
+        <div class="hero-copy">
+          <p class="yt-eyebrow">Find YouTubers for you</p>
+          <h1 id="landingTitle" tabindex="-1">Find your <span>YouTube match</span></h1>
+          <p class="hero-subtitle">Pick the things you love to watch. Six quick, simple questions - then we suggest YouTubers that fit, and tell you why.</p>
+          <div class="hero-actions">
+            <button class="yt-btn yt-btn-primary yt-btn-lg" id="startButton" type="button">Start matching &rarr;</button>
+            <button class="yt-btn yt-btn-ghost yt-btn-lg hidden" id="viewSavedButton" type="button">View my last results</button>
+          </div>
+          <p class="api-note" id="apiNote"></p>
+          <div class="welcome-back hidden" id="welcomeBack">
+            <span id="welcomeText">Your last answers are saved on this device.</span>
+            <button class="text-button" id="clearSaved" type="button">Forget my answers</button>
+          </div>
+          <div class="shared-note hidden" id="sharedNote" role="status"></div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+          <div class="hero-card">
+            <span class="mini-label">Your next favourite YouTuber</span>
+            <div class="avatar-stack" id="heroStack"></div>
+            <div class="mock-lines"><span></span><span></span><span></span></div>
+            <div class="mock-score">94%</div>
+          </div>
+          <span class="floating-pill pill-one">Gaming</span>
+          <span class="floating-pill pill-two">Comedy</span>
+          <span class="floating-pill pill-three">Hidden gems</span>
+        </div>
+      </div>
+
+      <div class="how-it-works">
+        <article><span>01</span><div><h2>Pick what you like.</h2><p>Choose as many topics as you want - gaming, music, food, science...</p></div></article>
+        <article><span>02</span><div><h2>Tell us your style.</h2><p>Big stars or hidden gems? Old favourites or new faces? Just tap.</p></div></article>
+        <article><span>03</span><div><h2>Meet your matches.</h2><p>Every YouTuber comes with a clear reason it was picked for you.</p></div></article>
+      </div>
+    </section>
+
+    <!-- QUIZ -->
+    <section class="screen yt-container" id="quizScreen" aria-label="Taste quiz">
+      <div class="quiz-shell">
+        <div class="quiz-topline">
+          <button class="text-button" id="exitQuizButton" type="button">&larr; Exit</button>
+          <span id="questionCounter">Question 1 of 6</span>
+        </div>
+        <div class="progress-track" id="quizTrack" role="progressbar" aria-label="Quiz progress" aria-valuemin="1" aria-valuemax="6" aria-valuenow="1"><div class="progress-fill" id="quizProgress"></div></div>
+
+        <div class="question-panel">
+          <p class="yt-eyebrow" id="questionEyebrow">Your taste</p>
+          <h2 id="questionTitle" tabindex="-1"></h2>
+          <p class="question-help" id="questionHelp"></p>
+          <div class="options-grid" id="optionsGrid"></div>
+          <p class="pick-count" id="pickCount" aria-live="polite"></p>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="yt-btn yt-btn-ghost" id="backButton" type="button">Back</button>
+          <button class="yt-btn yt-btn-primary" id="continueButton" type="button">Continue &rarr;</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYSIS -->
+    <section class="screen yt-container" id="analysisScreen" aria-labelledby="analysisTitle">
+      <div class="analysis-card">
+        <div class="scanner"><div class="scanner-ring"><span>&#9654;</span></div></div>
+        <p class="yt-eyebrow">Building your list</p>
+        <h2 id="analysisTitle" tabindex="-1">Finding your YouTubers&hellip;</h2>
+        <p id="analysisMessage" role="status" aria-live="polite">Looking at what you picked.</p>
+        <div class="analysis-progress"><div id="analysisProgressFill"></div></div>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section class="screen yt-container" id="resultsScreen" aria-labelledby="resultsTitle">
+      <div class="results-heading">
+        <div>
+          <p class="yt-eyebrow" id="resultsEyebrow">Picked for you</p>
+          <h2 id="resultsTitle" tabindex="-1">Your top matches</h2>
+          <p id="resultsSub">Best fit first. Each one shows why it was picked.</p>
+        </div>
+        <button class="yt-btn yt-btn-ghost" id="homeFromResults" type="button">Home</button>
+      </div>
+      <section class="taste-profile" id="tasteProfile" aria-label="What you picked"></section>
+      <div class="results-list" id="resultsList"></div>
+      <div class="more-row"><button class="yt-btn yt-btn-ghost hidden" id="showMoreButton" type="button">Show 5 more matches</button></div>
+      <div class="result-actions">
+        <button class="yt-btn yt-btn-primary" id="retakeButton" type="button">Start over</button>
+        <button class="yt-btn yt-btn-ghost" id="changeAnswersButton" type="button">Change my answers</button>
+        <button class="yt-btn yt-btn-ghost" id="surpriseButton" type="button">Surprise me</button>
+        <button class="yt-btn yt-btn-ghost" id="shareButton" type="button">Copy share link</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="yt-core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

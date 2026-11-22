@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="YouTube Games - Higher or Lower, a Daily YouTuber puzzle and the Mystery Channel clue game, powered by one creator API.">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>YouTube Games - Higher or Lower, Daily YouTuber and Mystery Channel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="yt-core.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="main" tabindex="-1">
+    <noscript><p class="noscript">These games need JavaScript to run.</p></noscript>
+    <div id="appState" class="yt-container"></div>
+
+    <!-- HOME -->
+    <section id="homeView" class="view yt-container hidden" aria-labelledby="homeTitle">
+      <div class="hero">
+        <p class="yt-eyebrow">API-powered creator games</p>
+        <h1 id="homeTitle" tabindex="-1">How well do you know <span>YouTube?</span></h1>
+        <p class="hero-copy">Test your instincts on real creator stats, solve a new mystery YouTuber every day, and crack clue-by-clue puzzles.</p>
+        <div class="hero-actions">
+          <a class="yt-btn yt-btn-primary yt-btn-lg" href="#higher-lower">Start playing</a>
+          <a class="yt-btn yt-btn-ghost yt-btn-lg" href="#daily">Today's challenge</a>
+        </div>
+        <div class="pool-row">
+          <label for="poolSelect">Creator pool</label>
+          <select id="poolSelect"></select>
+          <span id="poolInfo" class="pool-info"></span>
+        </div>
+      </div>
+
+      <div class="mode-grid">
+        <article class="mode-card red">
+          <div class="mode-top"><div class="mode-icon" aria-hidden="true">&#8597;</div><span class="mode-tag">Endless</span></div>
+          <div>
+            <p class="mode-kicker">Higher or Lower</p>
+            <h2>Beat your best streak.</h2>
+            <p>Compare two creators by subscribers, views or video count. Pairs get closer as your streak grows.</p>
+          </div>
+          <a class="yt-btn yt-btn-primary" href="#higher-lower">Play Higher or Lower</a>
+        </article>
+
+        <article class="mode-card green">
+          <div class="mode-top"><div class="mode-icon" aria-hidden="true">#</div><span class="mode-tag daily">Daily</span></div>
+          <div>
+            <p class="mode-kicker">Daily YouTuber</p>
+            <h2>Eight guesses. One creator.</h2>
+            <p>Wordle-style clues, with three free hints before your first guess and a new hint after every guess. Everyone gets the same creator.</p>
+            <p id="homeDaily" class="mode-status"></p>
+          </div>
+          <a class="yt-btn yt-btn-light" href="#daily">Play Daily YouTuber</a>
+        </article>
+
+        <article class="mode-card purple">
+          <div class="mode-top"><div class="mode-icon" aria-hidden="true">?</div><span class="mode-tag new">New</span></div>
+          <div>
+            <p class="mode-kicker">Mystery Channel</p>
+            <h2>Name them from the clues.</h2>
+            <p>You start with two clues - categories, audience size, country - and every wrong guess unlocks another, up to a blurred picture. Fewer clues, more points.</p>
+          </div>
+          <a class="yt-btn yt-btn-ghost" href="#mystery">Play Mystery Channel</a>
+        </article>
+      </div>
+
+      <section class="stats-panel" aria-labelledby="statsHeading">
+        <div class="stats-head"><div><p class="yt-eyebrow">Your stats</p><h2 id="statsHeading">Player progress</h2></div><span class="stats-note">Saved on this browser</span></div>
+        <div class="stats-grid">
+          <div class="stat-card"><strong id="statBestHL">0</strong><span>Best H/L streak</span></div>
+          <div class="stat-card"><strong id="statDailyWins">0</strong><span>Daily wins</span></div>
+          <div class="stat-card"><strong id="statDailyStreak">0</strong><span>Daily streak</span></div>
+          <div class="stat-card"><strong id="statMystery">0</strong><span>Mystery best run</span></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- HIGHER OR LOWER -->
+    <section id="hlView" class="view yt-container hidden" aria-labelledby="hlTitle">
+      <div class="section-head">
+        <div><p class="yt-eyebrow">Higher or Lower</p><h1 id="hlTitle" tabindex="-1">Trust your YouTube instincts.</h1><p class="section-copy">Pick a stat, compare creators, keep the streak alive.</p></div>
+        <a class="yt-btn yt-btn-ghost" href="#home">Back home</a>
+      </div>
+
+      <section id="metricPicker" class="panel center">
+        <h2>Choose what to compare</h2>
+        <p class="muted">One wrong answer ends the run. Matches get closer the longer you survive.</p>
+        <div class="metric-buttons">
+          <button class="metric-btn" type="button" data-metric="rawSubs"><span class="metric-symbol" aria-hidden="true">&#128101;</span><strong>Subscribers</strong><small>Who has more subscribers?</small><em data-best="rawSubs"></em></button>
+          <button class="metric-btn" type="button" data-metric="rawViews"><span class="metric-symbol" aria-hidden="true">&#9654;</span><strong>Total views</strong><small>Who has more lifetime views?</small><em data-best="rawViews"></em></button>
+          <button class="metric-btn" type="button" data-metric="videoCount"><span class="metric-symbol" aria-hidden="true">&#9638;</span><strong>Video count</strong><small>Who has uploaded more?</small><em data-best="videoCount"></em></button>
+        </div>
+      </section>
+
+      <section id="hlGame" class="hidden">
+        <div class="score-strip">
+          <span>Score <strong id="hlScore">0</strong></span>
+          <span>Best <strong id="hlBest">0</strong></span>
+          <span class="metric-display">Comparing <strong id="hlMetric">Subscribers</strong></span>
+          <button id="hlChange" class="text-button" type="button">Change stat</button>
+        </div>
+        <h2 id="hlPrompt" class="prompt" aria-live="polite"></h2>
+        <div class="battle-grid">
+          <article id="leftCard" class="battle-card" aria-label="Known creator"></article>
+          <div class="vs" aria-hidden="true">VS</div>
+          <article id="rightCard" class="battle-card" aria-label="Mystery comparison"></article>
+        </div>
+        <div class="answer-controls">
+          <button class="answer-btn" type="button" data-answer="higher"><span>Higher</span><b aria-hidden="true">&uarr;</b></button>
+          <button class="answer-btn" type="button" data-answer="lower"><span>Lower</span><b aria-hidden="true">&darr;</b></button>
+        </div>
+        <p class="kbd-hint">Tip: press <kbd>&uarr;</kbd> or <kbd>H</kbd> for higher, <kbd>&darr;</kbd> or <kbd>L</kbd> for lower.</p>
+        <div id="hlFeedback" class="feedback" role="status" aria-live="polite"></div>
+      </section>
+
+      <section id="hlOver" class="over hidden" role="status" aria-live="polite">
+        <div class="over-icon" aria-hidden="true">&#10005;</div>
+        <p class="yt-eyebrow">Game over</p>
+        <h2>Final score: <span id="hlFinal">0</span></h2>
+        <p id="hlOverText"></p>
+        <div class="over-actions">
+          <button id="hlAgain" class="yt-btn yt-btn-primary" type="button">Play again</button>
+          <button id="hlShare" class="yt-btn yt-btn-ghost" type="button">Share score</button>
+          <a class="yt-btn yt-btn-ghost" href="#home">Home</a>
+        </div>
+      </section>
+    </section>
+
+    <!-- DAILY -->
+    <section id="dailyView" class="view yt-container hidden" aria-labelledby="dailyTitle">
+      <div class="section-head">
+        <div><p class="yt-eyebrow">Daily YouTuber</p><h1 id="dailyTitle" tabindex="-1">One creator. Eight guesses.</h1><p class="section-copy">A new mystery creator every day at 00:00 UTC - the same one for everyone.</p></div>
+        <a class="yt-btn yt-btn-ghost" href="#home">Back home</a>
+      </div>
+
+      <section class="panel daily-shell">
+        <div class="daily-top">
+          <div><span id="dailyNumber" class="daily-number">Daily #1</span><p id="dailyDate"></p></div>
+          <div class="daily-meta">
+            <span class="pill"><span><strong id="attemptCount">0</strong>/8 guesses</span></span>
+            <span class="pill">New creator in <strong data-countdown>--:--:--</strong></span>
+          </div>
+        </div>
+
+        <div id="dailyInput" class="guess-area">
+          <label for="dailyGuess">Search for a creator</label>
+          <div class="ac-wrap">
+            <input id="dailyGuess" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dailyList" autocomplete="off" spellcheck="false" placeholder="Start typing a YouTuber name...">
+            <div id="dailyList" class="ac-list hidden" role="listbox" aria-label="Matching creators"></div>
+          </div>
+          <button id="dailySubmit" class="yt-btn yt-btn-primary" type="button" disabled>Submit guess</button>
+        </div>
+
+        <div id="dailyHints" class="hints" aria-live="polite"></div>
+
+        <div class="legend" aria-label="How to read the clues">
+          <span><i class="ldot exact"></i>&#10003; Exact</span><span><i class="ldot close"></i>&asymp; Close</span><span><i class="ldot miss"></i>&#10005; Different</span>
+          <span class="legend-tip">&uarr; target is higher &middot; &darr; target is lower</span>
+        </div>
+
+        <div class="gtable" role="table" aria-label="Your guesses and clues">
+          <div class="grow ghead" role="row">
+            <div role="columnheader">Creator</div><div role="columnheader">Country</div><div role="columnheader">Category</div><div role="columnheader">Subscribers</div><div role="columnheader">Views</div><div role="columnheader">Joined</div>
+          </div>
+          <div id="guessRows" role="rowgroup"></div>
+        </div>
+
+        <section id="dailyResult" class="result hidden" aria-live="polite"></section>
+      </section>
+    </section>
+
+    <!-- MYSTERY CHANNEL -->
+    <section id="mysteryView" class="view yt-container hidden" aria-labelledby="mysteryTitle">
+      <div class="section-head">
+        <div><p class="yt-eyebrow">Mystery Channel</p><h1 id="mysteryTitle" tabindex="-1">Name them from the clues.</h1><p class="section-copy">Every wrong guess unlocks a new clue. Solve a round to keep your run going.</p></div>
+        <a class="yt-btn yt-btn-ghost" href="#home">Back home</a>
+      </div>
+
+      <section class="panel">
+        <div class="score-strip">
+          <span>Round <strong id="myRound">1</strong></span>
+          <span>Run points <strong id="myPoints">0</strong></span>
+          <span>Best run <strong id="myBest">0</strong></span>
+          <span class="metric-display">Worth <strong id="myWorth">5</strong> pts now</span>
+        </div>
+        <div id="myClues" class="clues"></div>
+
+        <div id="myInput" class="guess-area">
+          <label for="myGuess">Who is it?</label>
+          <div class="ac-wrap">
+            <input id="myGuess" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="myList" autocomplete="off" spellcheck="false" placeholder="Type a creator's name...">
+            <div id="myList" class="ac-list hidden" role="listbox" aria-label="Matching creators"></div>
+          </div>
+          <button id="mySubmit" class="yt-btn yt-btn-primary" type="button" disabled>Guess</button>
+        </div>
+        <div id="myMsg" class="feedback" role="status" aria-live="polite"></div>
+        <section id="myResult" class="result hidden" aria-live="polite"></section>
+      </section>
+    </section>
+  </main>
+
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+  <script src="yt-core.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

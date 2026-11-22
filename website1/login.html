@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sign in to the YouTuber Archive, create a free account or continue as a guest.">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>Sign in - YouTuber Archive</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="yt-core.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+  <main id="main" class="auth-page" tabindex="-1">
+    <noscript><p class="noscript">This page needs JavaScript.</p></noscript>
+
+    <section class="auth-showcase" aria-label="What the archive offers">
+      <a class="auth-brand auth-brand-left" href="login.html" aria-label="YouTuber Archive"><span class="yt-logo" aria-hidden="true"></span><strong>YouTuber Archive</strong></a>
+      <h2>Every big YouTuber.<br><span class="grad-text">One living archive.</span></h2>
+      <p class="auth-pitch">Real channel stats, niches and each creator's most-viewed video, kept in one place and updated from YouTube data.</p>
+      <div class="auth-compare">
+        <div class="tier tier-guest">
+          <h3>Guest <small>no account</small></h3>
+          <ul>
+            <li>Preview of the top 30 creators</li>
+            <li>Name, niche, country, subscribers</li>
+            <li class="off">YouTube channel &amp; video links</li>
+            <li class="off">Full profiles, compare, follow</li>
+          </ul>
+        </div>
+        <div class="tier tier-member">
+          <h3>Member <small>free &middot; email confirmed</small></h3>
+          <ul>
+            <li>Every creator in the archive</li>
+            <li>Full profiles, bios and rankings</li>
+            <li>Open each YouTube channel</li>
+            <li>Most-viewed video of each creator</li>
+            <li>Follow, compare and similar creators</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="auth-side">
+      <div class="auth-card" id="authCard" aria-labelledby="authTitle">
+        <div class="auth-brand" aria-label="YouTuber Archive"><span class="yt-logo" aria-hidden="true"></span><strong>YouTuber Archive</strong></div>
+
+        <!-- state 1: sign in / create account -->
+        <div id="stateForms">
+          <h1 id="authTitle">Sign in</h1>
+          <p class="auth-lead" id="authLead">to continue to the archive</p>
+
+          <div class="auth-tabs" role="tablist" aria-label="Account options">
+            <button type="button" role="tab" id="tabLogin" aria-selected="true" aria-controls="paneLogin" data-tab="login">Sign in</button>
+            <button type="button" role="tab" id="tabRegister" aria-selected="false" aria-controls="paneRegister" data-tab="register" tabindex="-1">Create account</button>
+            <span class="auth-tab-ink" aria-hidden="true"></span>
+          </div>
+
+          <form id="paneLogin" class="auth-form" role="tabpanel" aria-labelledby="tabLogin" novalidate>
+            <label for="loginUser">Username or email</label>
+            <input id="loginUser" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+            <label for="loginPass">Password</label>
+            <div class="pw-row">
+              <input id="loginPass" name="password" type="password" autocomplete="current-password" required>
+              <button type="button" class="pw-toggle" data-toggle-pw="loginPass" aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
+            <p class="auth-error" id="loginError" role="alert" hidden></p>
+            <div class="auth-unverified" id="loginUnverified" hidden>
+              <button class="yt-btn yt-btn-ghost" type="button" id="loginResend">Resend the confirmation email</button>
+            </div>
+            <button class="yt-btn yt-btn-primary yt-btn-lg" type="submit" id="loginSubmit">Sign in</button>
+          </form>
+
+          <form id="paneRegister" class="auth-form hidden" role="tabpanel" aria-labelledby="tabRegister" novalidate>
+            <label for="regUser">Username <small>3-50 characters: letters, numbers, _ . -</small></label>
+            <input id="regUser" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="3" maxlength="50">
+            <label for="regEmail">Email <small>we send a confirmation link here</small></label>
+            <input id="regEmail" name="email" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" required maxlength="254" placeholder="you@example.com">
+            <label for="regPass">Password <small>at least 8 characters</small></label>
+            <div class="pw-row">
+              <input id="regPass" name="password" type="password" autocomplete="new-password" required minlength="8" maxlength="128">
+              <button type="button" class="pw-toggle" data-toggle-pw="regPass" aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
+            <label for="regPass2">Repeat password</label>
+            <input id="regPass2" name="password2" type="password" autocomplete="new-password" required>
+            <p class="auth-error" id="regError" role="alert" hidden></p>
+            <button class="yt-btn yt-btn-primary yt-btn-lg" type="submit" id="regSubmit">Create account</button>
+            <p class="auth-fine-inline">You need a real, working email: your account only unlocks after you open the link we send.</p>
+          </form>
+
+          <div class="auth-divider"><span>or</span></div>
+          <button class="yt-btn yt-btn-ghost yt-btn-lg auth-guest" type="button" id="guestBtn">Continue as guest</button>
+          <p class="auth-guest-note" id="guestNote">Guests see a preview of the top 30 creators with basic details only.</p>
+          <p class="auth-error" id="guestError" role="alert" hidden></p>
+        </div>
+
+        <!-- state 2: "check your inbox" (after sign-up, or when a sign-in needs confirming) -->
+        <div id="stateInbox" class="auth-state" hidden>
+          <div class="auth-mail" aria-hidden="true"><span class="auth-mail-ring"></span><span class="auth-mail-ring r2"></span>&#9993;</div>
+          <h1 id="inboxTitle" tabindex="-1">Check your inbox</h1>
+          <p class="auth-lead" id="inboxLead"></p>
+          <ol class="auth-steps">
+            <li>Open the email from <strong>YouTuber Archive</strong> (look in spam too).</li>
+            <li>Press <strong>Confirm my email</strong>.</li>
+            <li>You land back here, signed in, and see everything.</li>
+          </ol>
+          <p class="auth-error" id="inboxError" role="alert" hidden></p>
+          <p class="auth-ok" id="inboxOk" role="status" hidden></p>
+          <div class="auth-actions">
+            <button class="yt-btn yt-btn-primary" type="button" id="inboxResend">Resend email</button>
+            <button class="yt-btn yt-btn-ghost" type="button" id="inboxBack">Use another email</button>
+          </div>
+        </div>
+
+        <!-- state 3: confirming the emailed link -->
+        <div id="stateVerify" class="auth-state" hidden>
+          <div class="auth-spin" id="verifySpin" aria-hidden="true"></div>
+          <div class="auth-check" id="verifyCheck" aria-hidden="true" hidden>&#10003;</div>
+          <h1 id="verifyTitle" tabindex="-1">Confirming your email...</h1>
+          <p class="auth-lead" id="verifyLead">One moment.</p>
+          <p class="auth-error" id="verifyError" role="alert" hidden></p>
+          <div class="auth-actions" id="verifyActions" hidden>
+            <a class="yt-btn yt-btn-primary" id="verifyGo" href="index.html">Open the archive</a>
+            <button class="yt-btn yt-btn-ghost" type="button" id="verifyRetry">Back to sign in</button>
+          </div>
+        </div>
+      </div>
+      <p class="auth-fine">Figures are snapshot estimates. Not affiliated with or endorsed by YouTube.</p>
+    </div>
+  </main>
+
+  <script src="yt-core.js"></script>
+  <script src="yt-auth.js"></script>
+  <script src="login.js"></script>
+</body>
+</html>
