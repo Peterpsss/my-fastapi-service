@@ -1,6 +1,6 @@
 /* ==========================================================================
    yt-core.js  -  shared foundation for all three sites
-   (YouTuber Archive · YouTube Games · Taste Matcher)
+   (YouTuber Archive · YouTuber Games · Taste Matcher)
 
    Keep this file IDENTICAL in every site folder (root, web2/, web3/).
    Edit the CONFIG block below once, then copy the file to the other folders.
@@ -21,7 +21,7 @@
     SNAPSHOT_URL: 'creators-snapshot.json',
     SITES: {
       archive: { name: 'YouTuber Archive', short: 'Archive', url: 'https://my-fastapi-service-sigma.vercel.app/' },
-      games: { name: 'YouTube Games', short: 'Games', url: 'https://my-fastapi-service-website2.vercel.app/' },
+      games: { name: 'YouTuber Games', short: 'Games', url: 'https://my-fastapi-service-website2.vercel.app/' },
       matcher: { name: 'YouTuber Taste Matcher', short: 'Taste Matcher', url: 'https://my-fastapi-service-website3.vercel.app/' }
     }
   };
@@ -501,10 +501,54 @@
     const h = document.querySelector('.yt-header'); if (h) h.classList.toggle('scrolled', window.scrollY > 8);
   }, { passive: true });
 
+  /* ---------- account (sign-in shared between the three sites) ----------
+     Only the Archive has the login page. The Games site lives on its own address, so after signing in the Archive sends the visitor
+     back with the session in the URL *fragment* (#ytsession=...). A fragment is never sent to any server; it is read once here,
+     stored in this site's own storage and removed from the address bar. Only the two sibling sites are ever allowed as targets. */
+  const account = (() => {
+    const b64 = s => btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const unb64 = s => atob(String(s).replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((String(s).length + 3) % 4));
+    const clear = () => { try { localStorage.removeItem('yt:auth'); } catch { /* ignore */ } };
+    function get() {                                    // -> { username, role } for a signed-in member / admin, otherwise null
+      const a = store.get('auth');
+      if (!a || !a.user || !a.token || !['user', 'admin'].includes(a.user.role)) return null;
+      if (a.exp && Date.now() > a.exp) { clear(); return null; }
+      return { username: String(a.user.username || ''), role: a.user.role };
+    }
+    function encode(a) {                                // the Archive calls this when it sends a signed-in visitor back to a sibling site
+      if (!a || !a.token || !a.user || !['user', 'admin'].includes(a.user.role)) return '';
+      return b64(JSON.stringify({ t: a.token, i: a.user.id, u: a.user.username, r: a.user.role, e: a.exp || 0 }));
+    }
+    function adopt() {                                  // runs once at load: accept a session handed over in the fragment
+      const m = /^#ytsession=([A-Za-z0-9_-]{20,3000})$/.exec(location.hash);
+      if (!m) return;
+      try { history.replaceState(null, '', location.pathname + location.search); } catch { /* ignore */ }
+      try {
+        const d = JSON.parse(unb64(m[1]));
+        const ok = typeof d.t === 'string' && /^[\w-]+\.[\w-]+\.[\w-]+$/.test(d.t) && ['user', 'admin'].includes(d.r)
+          && /^[A-Za-z0-9_.@-]{1,254}$/.test(String(d.u)) && Number(d.e) > Date.now();
+        if (ok) store.set('auth', { token: d.t, user: { id: Number(d.i) || 0, username: String(d.u), role: d.r }, exp: Number(d.e) });
+      } catch { /* a malformed fragment is simply ignored */ }
+    }
+    async function verify() {                           // asks the API whether the stored session is still good (never blocks the page)
+      const a = store.get('auth');
+      if (!a || !a.token) return get();
+      try {
+        const r = await fetch(CONFIG.API_BASE + '/auth/me', { headers: { Accept: 'application/json', Authorization: 'Bearer ' + a.token } });
+        if (r.status === 401) { clear(); return null; }
+        if (r.ok) { const me = await r.json(); if (me && me.role) store.set('auth', { token: a.token, user: { id: me.id, username: me.username, role: me.role }, exp: a.exp }); }
+      } catch { /* offline: keep what we have */ }
+      return get();
+    }
+    const loginUrl = site => CONFIG.SITES.archive.url + 'login.html?next=' + encodeURIComponent(CONFIG.SITES[site].url);
+    adopt();
+    return { get, encode, verify, signOut: clear, loginUrl };
+  })();
+
   window.YT = {
     CONFIG, $, $$, esc, debounce, hash, store, fmt: { compact, int },
     nicheColor, CATEGORIES, categoryChips, normalize, normalizeList, channelUrl, videoUrl, popularUrl, bannerVars, avatarImg, initialsAvatar,
     loadCreators, friendlyError, mountShell, setStatus, statusFromSource, toast, showState, createModal,
-    siteUrl, params, setParam, reveal, countUp, stagger
+    siteUrl, params, setParam, reveal, countUp, stagger, account
   };
 })();

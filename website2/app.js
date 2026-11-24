@@ -1,4 +1,4 @@
-/* YouTube Games - Higher or Lower, Daily YouTuber and Mystery Channel.
+/* YouTuber Games - Higher or Lower, Daily YouTuber and Mystery Channel.
    Uses the shared client in yt-core.js (window.YT) for data, shell and helpers. */
 (function () {
   'use strict';
@@ -86,6 +86,50 @@
     return Math.max(1, Math.floor((Date.UTC(y, m - 1, d) - EPOCH) / 864e5) + 1);
   };
 
+  /* ---------------- free plays for guests ----------------
+     Guests get FREE_PLAYS games a day (a game = one Higher or Lower streak or one Mystery Channel run, counted at its first answer).
+     The Daily YouTuber is always free. Signed-in members play without limits. This is a friendly nudge, not a lock:
+     the counter lives in this browser, and nothing about the creators is hidden by it. */
+  const FREE_PLAYS = 3;
+  const gate = (() => {
+    let modal = null;
+    const dayKey = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+    const signedIn = () => !!Y.account.get();
+    const used = () => { const s = store.get('guestPlays', null); return s && s.date === dayKey() ? Number(s.n) || 0 : 0; };
+    const left = () => Math.max(0, FREE_PLAYS - used());
+    const canStart = () => signedIn() || left() > 0;
+    function renderBar() {
+      const bar = $('#planBar'); if (!bar) return;
+      const me = Y.account.get();
+      bar.innerHTML = me
+        ? `Signed in as <strong>${esc(me.username)}</strong> &middot; unlimited games &middot; <button class="plan-link" type="button" id="planOut">Sign out</button>`
+        : `Guest &middot; <strong>${left()} of ${FREE_PLAYS}</strong> free games left today (the Daily YouTuber is always free) &middot; <a href="${esc(Y.account.loginUrl('games'))}">Sign in for unlimited</a>`;
+      bar.dataset.state = me ? 'member' : (left() ? 'guest' : 'empty');
+      const out = $('#planOut'); if (out) out.addEventListener('click', () => { Y.account.signOut(); renderBar(); Y.toast('Signed out'); });
+    }
+    function consume() {                      // called at the first answer of a game
+      if (signedIn()) return;
+      store.set('guestPlays', { date: dayKey(), n: used() + 1 });
+      renderBar();
+      if (left() === 0) Y.toast('That was your last free game today - sign in to keep playing'); else Y.toast(`${left()} free game${left() > 1 ? 's' : ''} left today`);
+    }
+    function show() {
+      modal = modal || Y.createModal('gateModal');
+      modal.open(`<div class="gate">
+          <div class="gate-icon" aria-hidden="true">&#127918;</div>
+          <h2 id="gateTitle">You've used your ${FREE_PLAYS} free games today</h2>
+          <p>Sign in - it's free and takes a minute - to keep playing Higher or Lower and Mystery Channel as much as you like.</p>
+          <div class="gate-actions">
+            <a class="yt-btn yt-btn-primary yt-btn-lg" href="${esc(Y.account.loginUrl('games'))}" data-autofocus>Sign in or create an account</a>
+            <a class="yt-btn yt-btn-ghost yt-btn-lg" href="#daily" data-close>Play today's Daily YouTuber</a>
+            <button class="yt-btn yt-btn-ghost" type="button" data-close>Maybe later</button>
+          </div>
+          <p class="gate-note">Your free games come back tomorrow. The Daily YouTuber is always free, and your best scores stay on this device.</p>
+        </div>`, { labelledBy: 'gateTitle' });
+    }
+    return { canStart, consume, show, renderBar, left };
+  })();
+
   function renderStats() {
     const s = getStats();
     const streakAlive = s.daily.lastWin === utcDate() || s.daily.lastWin === utcYesterday();
@@ -172,7 +216,7 @@
   /* =====================================================
      HIGHER OR LOWER
      ===================================================== */
-  const hl = { active: false, metric: '', score: 0, left: null, right: null, locked: false, history: [], timer: 0, newBest: false, lastMiss: null };
+  const hl = { active: false, metric: '', score: 0, left: null, right: null, locked: false, history: [], timer: 0, newBest: false, lastMiss: null, counted: false };
 
   function pickOpponent(left) {
     const m = hl.metric;
@@ -210,8 +254,9 @@
   }
 
   function startHL(metric) {
+    if (!gate.canStart()) { gate.show(); return; }
     clearTimeout(hl.timer);
-    Object.assign(hl, { active: true, metric, score: 0, locked: false, history: [], newBest: false, lastMiss: null });
+    Object.assign(hl, { active: true, metric, score: 0, locked: false, history: [], newBest: false, lastMiss: null, counted: false });
     hl.left = POOL[rand(POOL.length)];
     hl.right = pickOpponent(hl.left);
     show($('#metricPicker'), false); show($('#hlOver'), false); show($('#hlGame'), true);
@@ -221,6 +266,7 @@
 
   function answerHL(dir) {
     if (!hl.active || hl.locked) return;
+    if (!hl.counted) { if (!gate.canStart()) { gate.show(); return; } gate.consume(); hl.counted = true; }
     hl.locked = true;
     $$('.answer-btn').forEach(b => { b.disabled = true; });
     const m = METRICS[hl.metric];
@@ -274,7 +320,7 @@
       $('.metric-btn').focus({ preventScroll: true });
     });
     $('#hlAgain').addEventListener('click', () => startHL(hl.metric));
-    $('#hlShare').addEventListener('click', () => copyText(`I scored ${hl.score} on Higher or Lower (${METRICS[hl.metric].label}) in YouTube Games! Can you beat it? ${Y.CONFIG.SITES.games.url}`));
+    $('#hlShare').addEventListener('click', () => copyText(`I scored ${hl.score} on Higher or Lower (${METRICS[hl.metric].label}) in YouTuber Games! Can you beat it? ${Y.CONFIG.SITES.games.url}`));
     document.addEventListener('keydown', e => {
       if (!hl.active || e.ctrlKey || e.metaKey || e.altKey || currentView() !== 'higher-lower') return;
       if (document.querySelector('.yt-modal:not(.hidden)')) return;
@@ -393,7 +439,7 @@
   function dailyShareText() {
     const a = dailyAnswer();
     const lines = daily.guesses.map(k => { const g = ALL.find(c => c.key === k); return g ? clueSet(g, a).map(c => CLUE_EMOJI[c.cls]).join('') : ''; });
-    return `YouTube Games Daily #${dailyNumber(daily.date)} ${daily.status === 'won' ? daily.guesses.length : 'X'}/${MAX_DAILY}\n${lines.join('\n')}\n${Y.CONFIG.SITES.games.url}#daily`;
+    return `YouTuber Games Daily #${dailyNumber(daily.date)} ${daily.status === 'won' ? daily.guesses.length : 'X'}/${MAX_DAILY}\n${lines.join('\n')}\n${Y.CONFIG.SITES.games.url}#daily`;
   }
 
   function renderDailyResult(a) {
@@ -462,7 +508,7 @@
      ===================================================== */
   const MAX_CLUES = 5;
   const START_CLUES = 2;        // a round opens with two clues already visible (categories + audience, then where & when)
-  const my = { round: 1, points: 0, creator: null, clues: 1, guessed: [], done: false, history: [] };
+  const my = { round: 1, points: 0, creator: null, clues: 1, guessed: [], done: false, history: [], counted: false };
   let myAC = null;
 
   const SUB_STEPS = [500e3, 1e6, 2e6, 5e6, 10e6, 15e6, 20e6, 30e6, 40e6, 50e6, 75e6, 100e6, 150e6, 200e6, 300e6];
@@ -527,7 +573,7 @@
   }
 
   function startMysteryRun() {
-    Object.assign(my, { round: 1, points: 0 });
+    Object.assign(my, { round: 1, points: 0, counted: false });
     newMysteryRound();
   }
 
@@ -554,6 +600,7 @@
   function submitMystery() {
     const g = myAC.selected;
     if (!g || my.done || my.guessed.includes(g.key)) return;
+    if (!my.counted) { if (!gate.canStart()) { gate.show(); return; } gate.consume(); my.counted = true; }
     const msg = $('#myMsg');
     if (g.key === my.creator.key) {
       const gained = Math.max(1, MAX_CLUES - (my.clues - START_CLUES));
@@ -619,10 +666,13 @@
 
   function route() {
     const v = currentView();
+    if (((v === 'higher-lower' && !hl.active) || (v === 'mystery' && !my.creator)) && !gate.canStart()) {   // used up today's free games: explain, go home
+      gate.show(); location.hash = ''; return;
+    }
     Object.entries(VIEWS).forEach(([k, id]) => show($('#' + id), k === v));
-    document.title = (v === 'home' ? 'YouTube Games' : { 'higher-lower': 'Higher or Lower', daily: 'Daily YouTuber', mystery: 'Mystery Channel' }[v] + ' · YouTube Games') + ' - one creator API';
+    document.title = (v === 'home' ? 'YouTuber Games' : { 'higher-lower': 'Higher or Lower', daily: 'Daily YouTuber', mystery: 'Mystery Channel' }[v] + ' · YouTuber Games') + ' - one creator API';
     window.scrollTo(0, 0);
-    if (v === 'home') renderStats();
+    if (v === 'home') { renderStats(); gate.renderBar(); }
     if (v === 'daily') renderDaily(false);
     if (v === 'mystery' && !my.creator) startMysteryRun();
     if (v === 'mystery') renderMystery();
@@ -662,6 +712,8 @@
     });
     wireHL();
     renderHomeDaily();
+    gate.renderBar();
+    Y.account.verify().then(gate.renderBar);
     tickCountdown(); setInterval(tickCountdown, 1000);
     window.addEventListener('hashchange', route);
     route();

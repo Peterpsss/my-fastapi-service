@@ -4,14 +4,24 @@
   const { $, $$, esc } = YT;
   YT.mountShell({ site: 'archive', bare: true });   // login is a standalone gate: no site header, nav or footer
 
-  /* Only allow redirecting to a page of this site (no external URLs, no javascript:). */
+  /* Only allow redirecting to a page of this site, or to the home page of the two sibling sites (Games / Taste Matcher).
+     Anything else (other websites, javascript:) falls back to the archive. */
+  const SIBLINGS = [YT.CONFIG.SITES.games.url, YT.CONFIG.SITES.matcher.url];
   function safeNext(value) {
     const v = String(value || '').trim();
+    if (SIBLINGS.includes(v)) return v;
     return /^[A-Za-z0-9_.-]+(\?[A-Za-z0-9_=&%.,@:/-]*)?$/.test(v) && !v.startsWith('.') ? v : 'index.html';
   }
   const params = YT.params();
   const next = safeNext(params.get('next'));
-  const go = () => { location.href = next; };
+  const external = /^https:\/\//.test(next);
+  /* Where "continue" really goes: for a sibling site, a signed-in member is handed over with the session in the URL fragment. */
+  const target = () => {
+    if (!external) return next;
+    const token = YT.account.encode(YTAuth.read());
+    return token ? next + '#ytsession=' + token : next;
+  };
+  const go = () => { location.href = target(); };
   const verifyToken = (params.get('verify') || '').trim();
 
   const card = $('#authCard');
@@ -34,7 +44,7 @@
       <h1>You are signed in</h1>
       <p class="auth-lead">Signed in as <strong>${esc(u.username)}</strong> <span class="role-pill" data-role="${esc(u.role)}">${esc(perms.label)}</span></p>
       <div class="auth-actions">
-        <a class="yt-btn yt-btn-primary yt-btn-lg" href="${esc(next)}">Continue to the archive</a>
+        <a class="yt-btn yt-btn-primary yt-btn-lg" href="${esc(target())}">${external ? 'Continue' : 'Continue to the archive'}</a>
         ${perms.edit ? '<a class="yt-btn yt-btn-ghost yt-btn-lg" href="admin.html">Open admin panel</a>' : ''}
         <button class="yt-btn yt-btn-ghost yt-btn-lg" type="button" id="signOut">Sign out</button>
       </div>`;
@@ -52,7 +62,7 @@
       $('#verifySpin').hidden = true; $('#verifyCheck').hidden = false;
       $('#verifyTitle').textContent = 'Email confirmed!';
       $('#verifyLead').innerHTML = `Welcome, <strong>${esc(a.user.username)}</strong>. Taking you to the full archive...`;
-      $('#verifyGo').href = next; $('#verifyActions').hidden = false;
+      $('#verifyGo').href = target(); $('#verifyActions').hidden = false;
       setTimeout(go, 1600);
     } catch (err) {
       $('#verifySpin').hidden = true;

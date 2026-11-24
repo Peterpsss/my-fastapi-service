@@ -1,4 +1,4 @@
-/* YouTube Games - site styles. Shared tokens, header, footer, buttons live in yt-core.css */
+/* YouTuber Games - site styles. Shared tokens, header, footer, buttons live in yt-core.css */
 main { padding-bottom: 64px; }
 main:focus { outline: none; }
 .view[tabindex], h1[tabindex]:focus { outline: none; }
@@ -224,3 +224,17 @@ kbd { display: inline-block; min-width: 24px; padding: 1px 7px; border: 1px soli
 .hint.next { background: rgba(255,255,255,.04); border-style: dashed; border-color: var(--border-strong); color: var(--muted); }
 .clue-avwrap { width: 120px; border-radius: 50%; margin-top: 10px; }
 .clue-avwrap .clue-thumb { width: 120px; aspect-ratio: 1; border-radius: 50%; --blur: 12px; }
+
+/* guests: free games bar and the "sign in to keep playing" dialog */
+.plan-bar { display: inline-block; margin: 22px auto 0; padding: 8px 16px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); font-size: .88rem; }
+.plan-bar strong { color: var(--text); }
+.plan-bar[data-state="empty"] { border-color: rgba(255, 78, 69, .55); }
+.plan-bar[data-state="member"] { border-color: rgba(110, 231, 160, .45); }
+.plan-bar a, .plan-link { color: var(--accent); font-weight: 700; text-decoration: underline; background: none; border: 0; padding: 0; font: inherit; font-weight: 700; cursor: pointer; }
+.plan-bar + .pool-row { margin-top: 14px; }
+.gate { display: grid; gap: 12px; text-align: center; justify-items: center; padding: 8px 4px 2px; }
+.gate-icon { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-size: 1.8rem; background: var(--accent-soft); }
+.gate h2 { margin: 0; font-size: 1.4rem; }
+.gate p { margin: 0; color: var(--muted); max-width: 440px; }
+.gate-actions { display: grid; gap: 10px; width: 100%; max-width: 360px; margin-top: 6px; }
+.gate-note { font-size: .82rem; color: var(--subtle); }

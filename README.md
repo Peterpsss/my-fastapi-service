@@ -3,7 +3,7 @@
 | Site | Folder | What it is |
 |---|---|---|
 | **YouTuber Archive** (Web 1) | `website1/` | Login / sign-up page, then search, filter, sort, compare and follow 100 creators. Admin panel at `/admin.html`. |
-| **YouTube Games** (Web 2) | `website2/` | Higher or Lower, Daily YouTuber and Mystery Channel. |
+| **YouTuber Games** (Web 2) | `website2/` | Higher or Lower, Daily YouTuber and Mystery Channel. |
 | **YouTuber Taste Matcher** (Web 3) | `website3/` | Six simple questions (pick as many interests as you like) that return YouTubers made for you, each with a plain-English reason. |
 | **API** | `api/` | FastAPI + Neon Postgres. All three sites read from it. |
 
@@ -67,7 +67,7 @@ Redeploy after saving the variables. `/health` shows `"email_confirmation": {"re
 
 Everything is enforced **by the API** (`GET /portal/creators`): hidden creators are sent as anonymous stubs, and guests never receive channel IDs or video links at all - they are not in the page, not just hidden. Anyone who signs up is a Member; promote people to Admin in **Admin -> Users** (which also shows each email and whether it is confirmed).
 
-Games and Taste Matcher read the open `/creators` list, so they are not gated. The Taste Matcher only links to the Archive profile (never straight to YouTube), so the member-only links stay member-only.
+Games and Taste Matcher read the open `/creators` list, so the creator data is not gated. The Games do limit how much a guest can play (3 games a day, see 5c); the Taste Matcher is fully open. The Taste Matcher only links to the Archive profile (never straight to YouTube), so the member-only links stay member-only.
 
 **Admin panel:** four tabs - Overview, **Add / edit**, Users and Audit log - plus CSV export. The old Creators / Verification queue / Catalog sync tabs are gone: the 100 creators come from the bundled, vidIQ-checked catalog, which syncs itself when you deploy a new version. The **Add / edit** tab (section 5b-1) is where you type in a picture, banner, top video or info yourself, or add a brand-new YouTuber.
 
@@ -121,6 +121,8 @@ Your edits override the built-in data and the automatic banners. The offline sna
 
 - **Daily YouTuber:** 8 guesses, and **three free hints are shown before your first guess** (categories, audience size, country); a new hint appears after each guess.
 - **Mystery Channel:** each round starts with two clues already open, and the first rounds use well-known channels.
+- **Free games for guests:** a guest can play **3 games a day** (one Higher or Lower streak or one Mystery Channel run counts as one game, at its first answer) plus the Daily YouTuber, which is always free. After that a friendly prompt offers **Sign in or create an account**; signed-in members play without limits. The home page shows "N of 3 free games left today". This is a gentle nudge, not a lock - the counter lives in the visitor's browser (clearing it gives 3 more) and nothing about the creators is hidden by it. To change the number, edit `FREE_PLAYS` at the top of the guest block in `website2/app.js`.
+- **How sign-in reaches the Games site:** only the Archive has the login page, and the sites live on different addresses, so after signing in the Archive sends the visitor back to the Games with the session in the address *fragment* (`#ytsession=...`). A fragment never goes to any server; the Games site reads it once, stores it in its own storage, removes it from the address bar and asks the API (`/auth/me`) whether it is valid. Only the Games and Taste Matcher home addresses are accepted as targets (`safeNext` in `login.js`); any other website is ignored. "Sign out" on the Games only signs out there - the Archive session is separate.
 - **Taste Matcher:** (1) pick any number of interests, (2) pick a mood (optional), (3) big stars or hidden gems, (4) old favourites or fresh faces, (5) how much to binge, (6) YouTubers you already love (optional, up to 5 - they are left out and used to find similar ones). The score is explainable: interests count most, then favourites, mood, fame, era and library size. "Surprise me" shows channels outside your picks.
 
 ## 6. When the API is down
